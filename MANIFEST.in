@@ -1,0 +1,4 @@
+include aquacrop_fd/templates/climate/Climate.*
+include aquacrop_fd/templates/auxiliary/Irrigation.*
+include aquacrop_fd/templates/project/Template.PRO
+
