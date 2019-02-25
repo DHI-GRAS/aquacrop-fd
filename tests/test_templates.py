@@ -1,9 +1,9 @@
 import pytest
 
-CLIMATE_FILENAMES = ['Climate.ETo', 'Climate.PLU', 'Climate.TMP']
+from aquacrop_fd.templates import climate
 
 
-@pytest.mark.parametrize('filename', CLIMATE_FILENAMES)
+@pytest.mark.parametrize('filename', list(climate.DATAFILES))
 def test_climate_template(filename, data_array, tmp_path):
     from aquacrop_fd import templates
     da = data_array
