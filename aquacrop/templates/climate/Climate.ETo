@@ -1,0 +1,9 @@
+Pot ET data from {source}
+    {frequency}  : Daily records (1=daily, 2=10-daily and 3=monthly data)
+    {start:%d}  : First day of record (1, 11 or 21 for 10-day or 1 for months)
+    {start:%m}  : First month of record
+    {start:%Y}  : First year of record (1901 if not linked to a specific year)
+
+  PET (mm)
+=======================
+{data_lines_onecol}
