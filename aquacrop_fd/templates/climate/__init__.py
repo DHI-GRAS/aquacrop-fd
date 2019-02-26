@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,8 @@ FREQUENCY_CODES = {
     '10-daily': 2,
     'monthly': 3
 }
+
+START_DATE_BLANK = datetime.datetime(1901, 1, 1)
 
 
 def _get_frequency(dates):
@@ -43,25 +46,39 @@ def _get_frequency_code(frequency):
         raise ValueError(f'No corresponding code found for frequency {frequency}')
 
 
-def format_climate_data(filename, source, outfile, times, arrs):
+def format_climate_data(filename, source, outfile, arrs, times=None):
     """Format AquaCrop input data files"""
 
-    shapes = set([len(a) for a in arrs] + [len(times)])
-    if len(shapes) > 1:
+    if filename not in DATAFILES:
         raise ValueError(
-            'times and data arrays must have same lengths'
+            f'Invalid filename {filename}. Choose from {list(DATAFILES)}.'
         )
 
+    # check shapes
+    if len(set(a.shape for a in arrs)) > 1:
+        raise ValueError(
+            'Data arrays must have same shapes'
+        )
+
+    # get data file template
     template = DATAFILES[filename].read_text()
 
-    frequency = _get_frequency(times)
-    frequency_code = _get_frequency_code(frequency)
+    # get frequency code and start date
+    if times is not None:
+        frequency = _get_frequency(times)
+        frequency_code = _get_frequency_code(frequency)
+        start = times[0]
+    else:
+        frequency_code = _get_frequency_code(1)
+        start = START_DATE_BLANK
 
+    # format data lines
     data_lines = '\n'.join(', '.join(f'{value:.4f}' for value in values) for values in zip(*arrs))
 
+    # format template
     template_filled = template.format(
         source=source,
-        start=times[0],
+        start=start,
         frequency=frequency_code,
         data_lines=data_lines
     )
