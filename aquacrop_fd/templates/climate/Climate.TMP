@@ -6,4 +6,4 @@ Temperature data from {source}:
 
   Tmin (C)   TMax (C)
 =======================
-{data_lines_twocol}
+{data_lines}

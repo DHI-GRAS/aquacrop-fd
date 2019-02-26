@@ -19,15 +19,11 @@ GRID_COORDS = dict(
 NAME = 'myvar'
 
 
-def get_time_coords_months(tstart=TSTART, ntime=12):
-    coords = dict(
-        time=pd.date_range(tstart, periods=ntime, freq='MS'))
-    return coords
-
-
-def create_data_array(tstart=TSTART, ntime=12):
+def create_data_array(tstart=TSTART, ntime=12, freq='MS'):
     coords = GRID_COORDS.copy()
-    coords.update(get_time_coords_months(tstart=tstart, ntime=ntime))
+    coords.update(
+        time=pd.date_range(tstart, periods=ntime, freq=freq)
+    )
     dims = ['time', 'lat', 'lon']
     datashape = tuple((len(coords[key]) for key in dims))
     data = np.random.random(datashape)

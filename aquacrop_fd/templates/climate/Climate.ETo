@@ -6,4 +6,4 @@ Pot ET data from {source}
 
   PET (mm)
 =======================
-{data_lines_onecol}
+{data_lines}

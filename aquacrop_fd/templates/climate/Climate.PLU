@@ -6,4 +6,4 @@ Rainfall data from {source}:
 
   Total Rain (mm)
 =======================
-{data_lines_onecol}
+{data_lines}

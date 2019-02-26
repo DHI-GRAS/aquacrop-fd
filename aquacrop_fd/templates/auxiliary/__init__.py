@@ -1,6 +1,6 @@
 from pathlib import Path
 
-IRRIGATIONFILE = (Path(__file__) / 'Irrigation.IRR').resolve()
+IRRIGATIONFILE = (Path(__file__).parent / 'Irrigation.IRR').resolve()
 
 
 def format_irrigation_file(outfile, depletion_of_raw=100):

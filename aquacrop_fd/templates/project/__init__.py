@@ -1,6 +1,6 @@
 from pathlib import Path
 
-TEMPLATEFILE = (Path(__file__) / 'Template.PRO').resolve()
+TEMPLATEFILE = (Path(__file__).parent / 'Template.PRO').resolve()
 
 
 def format_aquacrop_project(data_files, aquacrop_data, outfile):
