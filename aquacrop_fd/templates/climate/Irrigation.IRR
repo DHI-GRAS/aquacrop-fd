@@ -3,4 +3,4 @@ Example net irrigation requirement (allowable depletion 30 % RAW)
    1     : Sprinkler irrigation
  100     : Percentage of soil surface wetted by irrigation
    3     : Determination of Net Irrigation requirement
- {depletion_of_raw:f}     : Allowable depletion of RAW (%)
+  100     : Allowable depletion of RAW (%)
