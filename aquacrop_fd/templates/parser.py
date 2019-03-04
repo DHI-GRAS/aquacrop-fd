@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 
@@ -19,16 +20,16 @@ def _format_value(value):
         return str(value)
 
 
-def _join_line(line, value, name, linelen=None):
+def _join_line(value, name, linelen=None):
     value_str = _format_value(value)
     if linelen is not None:
         nwhite = max(
-            (linelen - len(name) - 5 - len(value_str)),
+            (linelen - len(name) - 5 - len(value_str) + 1),
             1
         )
     else:
         nwhite = 1
-    return (' ' * nwhite + '  :  ' + name)
+    return (' ' * nwhite + value_str + '  :  ' + name)
 
 
 def parse_file(path):
@@ -67,14 +68,17 @@ def change_lines(lines, changes, raise_missing=True):
         if name in changes:
             newvalue = changes[name]
             lines_out.append(
-                _join_line(name, newvalue, linelen=len(line))
+                _join_line(
+                    value=newvalue,
+                    name=name,
+                    linelen=len(line))
             )
             changed.append(name)
         else:
             lines_out.append(line)
 
     if raise_missing:
-        missing = set(changed) - set(changes)
+        missing = set(changes) - set(changed)
         if missing:
             raise RuntimeError(
                 'Some changes were not applied because the '
@@ -98,4 +102,4 @@ def change_file(infile, outfile, changes, raise_missing=True):
     infile, outfile = map(Path, [infile, outfile])
     lines = infile.read_text().splitlines()
     lines_out = change_lines(lines, changes, raise_missing=raise_missing)
-    outfile.write_text(r'\n'.join(lines_out))
+    outfile.write_text((os.linesep).join(lines_out))
