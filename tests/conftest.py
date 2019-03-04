@@ -1,3 +1,6 @@
+from pathlib import Path
+import shutil
+
 import pytest
 
 import datagen
@@ -27,3 +30,12 @@ def data_file_10d(data_array_10d, tmp_path_factory):
     outfile = tmp_path_factory.mktemp('data_10d') / 'data.nc'
     xr.to_netcdf(data_array_10d, str(outfile))
     return outfile
+
+
+@pytest.fixture
+def climate_file(tmp_path_factory):
+    from aquacrop_fd import templates
+    climfile = Path(templates.__file__).parent / 'climate' / 'Climate.TMP'
+    dst = tmp_path_factory.mktemp('climate') / climfile.name
+    shutil.copy(climfile, dst)
+    return dst
