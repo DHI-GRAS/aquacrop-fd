@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -102,4 +101,4 @@ def change_file(infile, outfile, changes, raise_missing=True):
     infile, outfile = map(Path, [infile, outfile])
     lines = infile.read_text().splitlines()
     lines_out = change_lines(lines, changes, raise_missing=raise_missing)
-    outfile.write_text((os.linesep).join(lines_out))
+    outfile.write_text('\n'.join(lines_out))
