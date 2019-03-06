@@ -6,36 +6,42 @@ from aquacrop_fd import utils
 from aquacrop_fd import templates
 from aquacrop_fd.templates import parser
 from aquacrop_fd.templates import climate_data
+from aquacrop_fd.templates import project
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_CLIMATE_FILES = ['Climate.IRR', 'Climate.TMP', 'Climate.Eto', 'Climate.CO2']
+REQUIRED_CLIMATE_FILES = ['Climate.TMP', 'Climate.ETo', 'Climate.PLU']
 
-REQUIRED_CONFIG = ['soil_type', 'crop_type', 'planting_date']
+STATIC_CLIMATE_FILES = ['Climate.CLI', 'Climate.CO2']
+
+REQUIRED_AUX_FILES = ['Irrigation.IRR']
+
+REQUIRED_CONFIG = ['soil', 'crop', 'planting_date']
 
 
-def _copy_soil_file(soil_type, outdir):
-    filename = soil_type.capitalize() + '.SOL'
+def _copy_soil_file(soil, outdir):
+    filename = soil + '.SOL'
     soils = templates.DATA['soil']
     try:
         src = soils[filename]
     except KeyError:
         raise ValueError(
-            f'Soil type {soil_type} not found. Choose from {list(soils)}.'
+            f'Soil file {filename} not found. Choose from {list(soils)}.'
         )
     dst = outdir / filename
     shutil.copy(src, dst)
     return dst
 
 
-def _copy_crop_file(crop_type, outdir):
-    filename = crop_type.capitalize() + '.CRO'
+def _copy_crop_file(crop, outdir):
+    # first letter capital
+    filename = crop + '.CRO'
     crops = templates.DATA['crop']
     try:
         src = crops[filename]
     except KeyError:
         raise ValueError(
-            f'Soil type {crop_type} not found. Choose from {list(crops)}.'
+            f'Soil file {filename} not found. Choose from {list(crops)}.'
         )
     dst = outdir / filename
     shutil.copy(src, dst)
@@ -52,19 +58,38 @@ def _get_crop_cycle_length(crop_file):
 
 
 def write_data_file(filename, outdir, arrs, times, changes=None):
+    climate_templates = templates.DATA['climate']
     try:
-        src = templates.DATA['climate'][filename]
-    except KeyError:
+        src = climate_templates[filename]
+    except KeyError as err:
         raise ValueError(
-            f'Climate file {filename} not found.'
-        )
+            f'Climate file {filename} not found. Choose from {list(climate_templates)}'
+        ) from err
     dst = outdir / filename
     lines = src.read_text().splitlines()
-    if changes:
-        lines = parser.change_lines(lines, changes=changes)
-    climate_data.write_climate_data(lines, arrs, times=times)
+    try:
+        climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
+    except RuntimeError as err:
+        raise RuntimeError(f'Error changing {filename}: {err!s}') from err
     dst.write_text('\n'.join(lines))
     return dst
+
+
+def copy_climate_file(outdir, filename):
+    src = templates.DATA['climate']['Climate.CO2']
+    dst = outdir / src.name
+    shutil.copy(src, dst)
+    return dst
+
+
+def write_net_irrigation_file(outdir, fraction):
+    infile = templates.DATA['climate']['Irrigation.IRR']
+    outfile = outdir / infile.name
+    changes = {
+        'Allowable depletion of RAW (%)': fraction
+    }
+    parser.change_file(infile, outfile, changes)
+    return outfile
 
 
 def prepare_data_folder(outdir, data, config):
@@ -74,13 +99,14 @@ def prepare_data_folder(outdir, data, config):
     if missing_config:
         raise ValueError(f'Config is missing information: {missing_config}')
 
-    paths['soil'] = _copy_soil_file(config['soil_type'], outdir)
-    paths['crop'] = _copy_crop_file(config['crop_type'], outdir)
+    # write soil and crop files
+    paths['soil'] = _copy_soil_file(config['soil'], outdir)
+    paths['crop'] = _copy_crop_file(config['crop'], outdir)
 
+    # calculate date range for crop type
     crop_cycle_length = _get_crop_cycle_length(paths['crop'])
-
     start_date = config['planting_date']
-    end_date = start_date = crop_cycle_length
+    end_date = start_date + crop_cycle_length
     project_config = {
         'first_day_crop': utils.date_to_num(start_date),
         'first_day_sim': utils.date_to_num(start_date),
@@ -89,27 +115,29 @@ def prepare_data_folder(outdir, data, config):
     }
     logger.debug(f'Project config is: {project_config}')
 
+    # write irrigation file
+    irrpath = write_net_irrigation_file(outdir, fraction=config.get('fraction', 100))
+    paths[irrpath.name] = irrpath
+
+    # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
-        changes = {}
-
-        if filename == 'Climate.IRR':
-            changes.update({
-                'Allowable depletion of RAW (%)': config['fraction']
-            })
-
         paths[filename] = write_data_file(
             filename=filename,
             outdir=outdir,
             arrs=data[filename]['arrs'],
-            times=data[filename]['times'],
-            changes=changes
+            times=data[filename]['times']
         )
 
+    # write CO2 file
+    for filename in STATIC_CLIMATE_FILES:
+        paths[filename] = copy_climate_file(outdir, filename)
+
+    # write project file
     project_file = outdir / 'project.PRO'
-    templates.project.write_project_file(
+    project.write_project_file(
         outfile=project_file,
         paths=paths,
         config=project_config
     )
 
-    return paths
+    return project_file

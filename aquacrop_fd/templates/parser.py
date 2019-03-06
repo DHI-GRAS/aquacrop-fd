@@ -100,5 +100,8 @@ def change_file(infile, outfile, changes, raise_missing=True):
     """
     infile, outfile = map(Path, [infile, outfile])
     lines = infile.read_text().splitlines()
-    lines_out = change_lines(lines, changes, raise_missing=raise_missing)
+    try:
+        lines_out = change_lines(lines, changes, raise_missing=raise_missing)
+    except RuntimeError as err:
+        raise RuntimeError(f'Error changing {infile.name}: {err}')
     outfile.write_text('\n'.join(lines_out))

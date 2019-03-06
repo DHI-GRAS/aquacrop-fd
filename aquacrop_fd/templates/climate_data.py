@@ -1,9 +1,11 @@
+import logging
 import datetime
 
 import numpy as np
 
 from aquacrop_fd.templates import parser
 
+logger = logging.getLogger(__name__)
 
 FREQUENCY_CODES = {
     'daily': 1,
@@ -44,7 +46,7 @@ def _get_frequency_code(frequency):
         raise ValueError(f'No corresponding code found for frequency {frequency}')
 
 
-def format_climate_data(arrs, times=None):
+def _format_climate_data(arrs, times=None):
     """Format AquaCrop input data files"""
     # check shapes
     if (len(set(np.shape(a) for a in arrs)) > 1) or (np.ndim(arrs[0]) != 1):
@@ -54,21 +56,21 @@ def format_climate_data(arrs, times=None):
     # get frequency code and start date
     if times is not None:
         frequency = _get_frequency(times)
-        returns = dict(
+        timekw = dict(
             frequency_code=_get_frequency_code(frequency),
             start=times[0]
         )
     else:
-        returns = dict(
+        timekw = dict(
             frequency_code=_get_frequency_code(1),
             start=START_DATE_BLANK
         )
     # format data lines
-    returns['data_lines'] = [
+    data_lines = [
         ', '.join(f'{value:.4f}' for value in values)
         for values in zip(*arrs)
     ]
-    return returns
+    return timekw, data_lines
 
 
 def _find_break(lines):
@@ -100,11 +102,14 @@ def _format_changes(frequency_code, start):
     }
 
 
-def write_climate_data(lines, arrs, times=None):
-    kw = format_climate_data(arrs=arrs, times=times)
-    data_lines = kw.pop('data_lines')
-    lines = parser.change_lines(
-        lines,
-        changes=_format_changes(**kw),
-    )
-    return _write_climate_lines(lines, data_lines)
+def write_climate_data(lines, arrs, times=None, extra_changes=None):
+    timekw, data_lines = _format_climate_data(arrs=arrs, times=times)
+    changes = _format_changes(**timekw)
+    if extra_changes is not None:
+        changes.update(extra_changes)
+    logger.debug(f'Climate data changes: {changes}')
+    # write config
+    lines = parser.change_lines(lines, changes=changes)
+    # write data
+    lines = _write_climate_lines(lines, data_lines)
+    return lines

@@ -31,9 +31,9 @@ def data_file_10d(data_array_10d, tmp_path_factory):
 
 @pytest.fixture
 def data_dict_10d(data_array_10d):
-    da = next(iter(data_array_10d.data_vars.values()))
+    da = data_array_10d
     return dict(
-        arrs=da.isel(lon=5, lat=5).values,
+        arrs=[da.isel(lon=5, lat=5).values],
         times=da.time.to_index().to_pydatetime()
     )
 
@@ -43,15 +43,15 @@ def sample_config():
     return {
         'planting_date': datagen.TSTART,
         'crop': 'Maize',
-        'soil_type': 'YoloClayLoam6'
+        'soil': 'YoloClayLoam6'
     }
 
 
 @pytest.fixture
 def climate_file(tmp_path_factory, data_dict_10d):
-    from aquacrop_fd import prepare_data_folder
+    from aquacrop_fd import model_setup
     dst = tmp_path_factory.mktemp('climate') / 'Climate.TMP'
-    prepare_data_folder.write_data_file(
+    model_setup.write_data_file(
         filename=dst.name,
         outdir=dst.parent,
         **data_dict_10d

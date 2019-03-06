@@ -3,8 +3,8 @@ from pathlib import Path
 TEMPLATEFILE = (Path(__file__).parent / 'Template.PRO').resolve()
 
 REQUIRED_PATHS = [
-    'Climate.CLI', 'Climate.TMP', 'Climate.Eto',
-    'Climate.Plu', 'Climate.CO2', 'Climate.IRR',
+    'Climate.CLI', 'Climate.TMP', 'Climate.ETo',
+    'Climate.PLU', 'Climate.CO2', 'Irrigation.IRR',
     'crop', 'soil'
 ]
 
@@ -34,6 +34,7 @@ def write_project_file(outfile, paths, config):
         raise ValueError(f'Missing config for {missing_config}')
 
     fields = dict(paths=paths, **config)
+    print(fields)
     template = TEMPLATEFILE.read_text()
     template_formatted = template.format(**fields)
     outfile.write_text(template_formatted)

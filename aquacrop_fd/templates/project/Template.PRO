@@ -25,32 +25,32 @@
      28.0       : Default maximum temperature (°C) if no temperature file is specified
       3         : Default method for the calculation of growing degree days
 -- 1. Climate (CLI) file
-   {paths["Climate.CLI"].name}
-   {paths["Climate.CLI"].parent}
+   {paths[Climate.CLI].name}
+   {paths[Climate.CLI].parent}
    1.1 Temperature (TMP) file
-   {paths["Climate.TMP"].name}
-   {paths["Climate.TMP"].parent}
+   {paths[Climate.TMP].name}
+   {paths[Climate.TMP].parent}
    1.2 Reference ET (ETo) file
-   {paths["Climate.ETo"].name}
-   {paths["Climate.ETo"].parent}
+   {paths[Climate.ETo].name}
+   {paths[Climate.ETo].parent}
    1.3 Rain (PLU) file
-   {paths["Climate.Plu"].name}
-   {paths["Climate.Plu"].parent}
+   {paths[Climate.PLU].name}
+   {paths[Climate.PLU].parent}
    1.4 Atmospheric CO2 (CO2) file
-   {paths["Climate.CO2"].name}
-   {paths["Climate.CO2"].parent}
+   {paths[Climate.CO2].name}
+   {paths[Climate.CO2].parent}
 -- 2. Crop (CRO) file
-   {paths["crop"].name}
-   {paths["crop"].parent}
+   {paths[crop].name}
+   {paths[crop].parent}
 -- 3. Irrigation (IRR) file
-   {paths["Climate.IRR"].name}
-   {paths["Climate.IRR"].parent}
+   {paths[Irrigation.IRR].name}
+   {paths[Irrigation.IRR].parent}
 -- 4. Management (MAN) file
    (None)
    (None)
 -- 5. Soil profile (SOL) file
-   {paths["soil"].name}
-   {paths["soil"].parent}
+   {paths[soil].name}
+   {paths[soil].parent}
 -- 6. Groundwater (GWT) file
    (None)
    (None)
