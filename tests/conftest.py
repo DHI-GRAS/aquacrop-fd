@@ -1,6 +1,3 @@
-from pathlib import Path
-import shutil
-
 import pytest
 
 import datagen
@@ -33,9 +30,30 @@ def data_file_10d(data_array_10d, tmp_path_factory):
 
 
 @pytest.fixture
-def climate_file(tmp_path_factory):
-    from aquacrop_fd import templates
-    climfile = Path(templates.__file__).parent / 'climate' / 'Climate.TMP'
-    dst = tmp_path_factory.mktemp('climate') / climfile.name
-    shutil.copy(climfile, dst)
+def data_dict_10d(data_array_10d):
+    da = next(iter(data_array_10d.data_vars.values()))
+    return dict(
+        arrs=da.isel(lon=5, lat=5).values,
+        times=da.time.to_index().to_pydatetime()
+    )
+
+
+@pytest.fixture
+def sample_config():
+    return {
+        'planting_date': datagen.TSTART,
+        'crop': 'Maize',
+        'soil_type': 'YoloClayLoam6'
+    }
+
+
+@pytest.fixture
+def climate_file(tmp_path_factory, data_dict_10d):
+    from aquacrop_fd import prepare_data_folder
+    dst = tmp_path_factory.mktemp('climate') / 'Climate.TMP'
+    prepare_data_folder.write_data_file(
+        filename=dst.name,
+        outdir=dst.parent,
+        **data_dict_10d
+    )
     return dst

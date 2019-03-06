@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_CLIMATE_FILES = ['Climate.IRR', 'Climate.TMP', 'Climate.Eto', 'Climate.CO2']
 
+REQUIRED_CONFIG = ['soil_type', 'crop_type', 'planting_date']
+
 
 def _copy_soil_file(soil_type, outdir):
     filename = soil_type.capitalize() + '.SOL'
@@ -49,7 +51,7 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_data_file(filename, changes, arrs, times, outdir):
+def write_data_file(filename, outdir, arrs, times, changes=None):
     try:
         src = templates.DATA['climate'][filename]
     except KeyError:
@@ -65,11 +67,15 @@ def write_data_file(filename, changes, arrs, times, outdir):
     return dst
 
 
-def prepare_data_folder(outdir, ds, crop_type, soil_type, config):
+def prepare_data_folder(outdir, data, config):
     paths = {}
 
-    paths['soil'] = _copy_soil_file(soil_type, outdir)
-    paths['crop'] = _copy_crop_file(crop_type, outdir)
+    missing_config = set(REQUIRED_CONFIG) - set(config)
+    if missing_config:
+        raise ValueError(f'Config is missing information: {missing_config}')
+
+    paths['soil'] = _copy_soil_file(config['soil_type'], outdir)
+    paths['crop'] = _copy_crop_file(config['crop_type'], outdir)
 
     crop_cycle_length = _get_crop_cycle_length(paths['crop'])
 
@@ -88,15 +94,15 @@ def prepare_data_folder(outdir, ds, crop_type, soil_type, config):
 
         if filename == 'Climate.IRR':
             changes.update({
-                'Allowable depletion of RAW (%)': config['Climate.IRR']['fraction']
+                'Allowable depletion of RAW (%)': config['fraction']
             })
 
         paths[filename] = write_data_file(
             filename=filename,
-            changes=changes,
-            arrs=arrs,
-            times=times,
-            outdir=outdir
+            outdir=outdir,
+            arrs=data[filename]['arrs'],
+            times=data[filename]['times'],
+            changes=changes
         )
 
     project_file = outdir / 'project.PRO'

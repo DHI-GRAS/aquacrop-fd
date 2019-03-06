@@ -1,3 +1,5 @@
+import datetime
+
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -9,7 +11,7 @@ DLAT = 0.25
 LONLIM_SUBSET = (-5, 6)
 LATLIM_SUBSET = (0, 7)
 
-TSTART = '2000-01-01'
+TSTART = datetime.date(2000, 1, 1)
 
 GRID_COORDS = dict(
     lon=np.arange(*LONLIM, DLON),
