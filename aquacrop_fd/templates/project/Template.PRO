@@ -21,36 +21,36 @@
      20         : salt diffusion factor (capacity for salt diffusion in micro pores) [%]
     100         : salt solubility [g/liter]
      16         : shape factor for effect of soil water content gradient on capillary rise
-     12.0       : Default minimum temperature (�C) if no temperature file is specified
-     28.0       : Default maximum temperature (�C) if no temperature file is specified
+     12.0       : Default minimum temperature (°C) if no temperature file is specified
+     28.0       : Default maximum temperature (°C) if no temperature file is specified
       3         : Default method for the calculation of growing degree days
 -- 1. Climate (CLI) file
-   {paths["CLI"]["name"]}
-   {paths["CLI"]["parent"]}
+   {paths["Climate.CLI"].name}
+   {paths["Climate.CLI"].parent}
    1.1 Temperature (TMP) file
-   {paths["TMP"]["name"]}
-   {paths["TMP"]["parent"]}
+   {paths["Climate.TMP"].name}
+   {paths["Climate.TMP"].parent}
    1.2 Reference ET (ETo) file
-   {paths["ETo"]["name"]}
-   {paths["ETo"]["parent"]}
+   {paths["Climate.ETo"].name}
+   {paths["Climate.ETo"].parent}
    1.3 Rain (PLU) file
-   {paths["Plu"]["name"]}
-   {paths["Plu"]["parent"]}
+   {paths["Climate.Plu"].name}
+   {paths["Climate.Plu"].parent}
    1.4 Atmospheric CO2 (CO2) file
-   Climate.CO2
-   {paths["DATA"]}
+   {paths["Climate.CO2"].name}
+   {paths["Climate.CO2"].parent}
 -- 2. Crop (CRO) file
-   {crop_name}.CRO
-   {paths["DATA"]}
+   {paths["crop"].name}
+   {paths["crop"].parent}
 -- 3. Irrigation (IRR) file
-   {paths["IRR"]["name"]}
-   {paths["IRR"]["parent"]}
+   {paths["Climate.IRR"].name}
+   {paths["Climate.IRR"].parent}
 -- 4. Management (MAN) file
    (None)
    (None)
 -- 5. Soil profile (SOL) file
-   {soil_profile}.SOL
-   {paths["DATA"]}
+   {paths["soil"].name}
+   {paths["soil"].parent}
 -- 6. Groundwater (GWT) file
    (None)
    (None)

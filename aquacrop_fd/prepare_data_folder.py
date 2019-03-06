@@ -1,10 +1,15 @@
 import shutil
+import datetime
+import logging
 
+from aquacrop_fd import utils
 from aquacrop_fd import templates
 from aquacrop_fd.templates import parser
 from aquacrop_fd.templates import climate_data
 
-REQUIRED_CLIMATE_FILES = ['Climate.IRR']
+logger = logging.getLogger(__name__)
+
+REQUIRED_CLIMATE_FILES = ['Climate.IRR', 'Climate.TMP', 'Climate.Eto', 'Climate.CO2']
 
 
 def _copy_soil_file(soil_type, outdir):
@@ -35,7 +40,16 @@ def _copy_crop_file(crop_type, outdir):
     return dst
 
 
-def write_data_file(filename, outdir, changes, arrs):
+def _get_crop_cycle_length(crop_file):
+    data = parser.parse_file(crop_file)
+    try:
+        daystr = data["Calendar Days: from sowing to maturity (length of crop cycle)"]
+    except KeyError:
+        raise KeyError(f'length of crop cycle not found in crop file {crop_file}')
+    return datetime.timedelta(days=int(daystr))
+
+
+def write_data_file(filename, changes, arrs, times, outdir):
     try:
         src = templates.DATA['climate'][filename]
     except KeyError:
@@ -46,19 +60,50 @@ def write_data_file(filename, outdir, changes, arrs):
     lines = src.read_text().splitlines()
     if changes:
         lines = parser.change_lines(lines, changes=changes)
-    climate_data.write_climate_data(lines, arrs)
+    climate_data.write_climate_data(lines, arrs, times=times)
     dst.write_text('\n'.join(lines))
     return dst
 
 
 def prepare_data_folder(outdir, ds, crop_type, soil_type, config):
-    soil_file = _copy_soil_file(soil_type, outdir)
-    crop_file = _copy_crop_file(crop_type, outdir)
+    paths = {}
 
-    name = 'Climate.IRR'
+    paths['soil'] = _copy_soil_file(soil_type, outdir)
+    paths['crop'] = _copy_crop_file(crop_type, outdir)
 
-    if name == 'Climate.IRR':
-        changes = {
-            'Allowable depletion of RAW (%)': config['Climate.IRR']['fraction']
-        }
-        arrs = []
+    crop_cycle_length = _get_crop_cycle_length(paths['crop'])
+
+    start_date = config['planting_date']
+    end_date = start_date = crop_cycle_length
+    project_config = {
+        'first_day_crop': utils.date_to_num(start_date),
+        'first_day_sim': utils.date_to_num(start_date),
+        'last_day_crop': utils.date_to_num(end_date),
+        'last_day_sim': utils.date_to_num(end_date)
+    }
+    logger.debug(f'Project config is: {project_config}')
+
+    for filename in REQUIRED_CLIMATE_FILES:
+        changes = {}
+
+        if filename == 'Climate.IRR':
+            changes.update({
+                'Allowable depletion of RAW (%)': config['Climate.IRR']['fraction']
+            })
+
+        paths[filename] = write_data_file(
+            filename=filename,
+            changes=changes,
+            arrs=arrs,
+            times=times,
+            outdir=outdir
+        )
+
+    project_file = outdir / 'project.PRO'
+    templates.project.write_project_file(
+        outfile=project_file,
+        paths=paths,
+        config=project_config
+    )
+
+    return paths
