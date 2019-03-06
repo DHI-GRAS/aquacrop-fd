@@ -5,8 +5,8 @@ Default Paddy Rice, Calendar (LosBanos, 15Jan04)
      0         : Crop is transplanted
      1         : Determination of crop cycle : by calendar days
      1         : Soil water depletion factors (p) are adjusted by ETo
-     8.0       : Base temperature (°C) below which crop development does not progress
-    30.0       : Upper temperature (°C) above which crop development no longer increases with an increase in temperature
+     8.0       : Base temperature (degC) below which crop development does not progress
+    30.0       : Upper temperature (degC) above which crop development no longer increases with an increase in temperature
     -9         : Total length of crop cycle in growing degree-days
      0.00      : Soil water depletion factor for canopy expansion (p-exp) - Upper threshold
      0.40      : Soil water depletion factor for canopy expansion (p-exp) - Lower threshold
@@ -24,9 +24,9 @@ Default Paddy Rice, Calendar (LosBanos, 15Jan04)
     25.00      : Response of crop Water Productivity is not considered
     25.00      : Response of decline of canopy cover is not considered
     -9         : dummy - Parameter no Longer required
-     8         : Minimum air temperature below which pollination starts to fail (cold stress) (°C)
-    35         : Maximum air temperature above which pollination starts to fail (heat stress) (°C)
-    10.0       : Minimum growing degrees required for full crop transpiration (°C - day)
+     8         : Minimum air temperature below which pollination starts to fail (cold stress) (degC)
+    35         : Maximum air temperature above which pollination starts to fail (heat stress) (degC)
+    10.0       : Minimum growing degrees required for full crop transpiration (degC - day)
      3         : Electrical Conductivity of soil saturation extract at which crop starts to be affected by soil salinity (dS/m)
     11         : Electrical Conductivity of soil saturation extract at which crop can no longer grow (dS/m)
     -9         : Dummy - no longer applicable

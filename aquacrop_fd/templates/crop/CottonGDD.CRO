@@ -5,8 +5,8 @@ Default Cotton, GDD (Cordoba, 15Apr86)
      1         : Crop is sown
      0         : Determination of crop cycle : by growing degree-days
      1         : Soil water depletion factors (p) are adjusted by ETo
-    12.0       : Base temperature (°C) below which crop development does not progress
-    35.0       : Upper temperature (°C) above which crop development no longer increases with an increase in temperature
+    12.0       : Base temperature (degC) below which crop development does not progress
+    35.0       : Upper temperature (degC) above which crop development no longer increases with an increase in temperature
   1956         : Total length of crop cycle in growing degree-days
      0.20      : Soil water depletion factor for canopy expansion (p-exp) - Upper threshold
      0.70      : Soil water depletion factor for canopy expansion (p-exp) - Lower threshold
@@ -24,8 +24,8 @@ Default Cotton, GDD (Cordoba, 15Apr86)
     25.00      : Response of crop Water Productivity is not considered
     25.00      : Response of decline of canopy cover is not considered
     -9         : dummy - Parameter no Longer required
-    15         : Minimum air temperature below which pollination starts to fail (cold stress) (°C)
-    43         : Maximum air temperature above which pollination starts to fail (heat stress) (°C)
+    15         : Minimum air temperature below which pollination starts to fail (cold stress) (degC)
+    43         : Maximum air temperature above which pollination starts to fail (heat stress) (degC)
     -9.0       : Cold (air temperature) stress on crop transpiration not considered
      8         : Electrical Conductivity of soil saturation extract at which crop starts to be affected by soil salinity (dS/m)
     27         : Electrical Conductivity of soil saturation extract at which crop can no longer grow (dS/m)
