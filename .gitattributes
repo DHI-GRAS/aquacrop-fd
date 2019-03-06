@@ -51,3 +51,5 @@
 *.props     merge=binary
 *.filters   merge=binary
 *.vcxitems  merge=binary
+
+*.zip binary
