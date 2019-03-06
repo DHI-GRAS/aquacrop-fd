@@ -3,4 +3,4 @@ include aquacrop_fd/templates/climate/Irrigation.IRR
 include aquacrop_fd/templates/crop/*.CRO
 include aquacrop_fd/templates/soil/*.SOL
 include aquacrop_fd/templates/project/Template.PRO
-
+include aquacrop_fd/execution/*.zip
