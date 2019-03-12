@@ -1,4 +1,4 @@
-      4.0       : AquaCrop Version (June 2012)
+      6.0       : AquaCrop Version (March 2017)
   {first_day_sim}         : First day of simulation period - 01 01 2018
   {last_day_sim}         : Last day of simulation period - 13 05 2018
   {first_day_crop}         : First day of cropping period - 01 01 2018
