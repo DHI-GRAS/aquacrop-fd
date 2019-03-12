@@ -51,7 +51,8 @@ def sample_config():
     return {
         'planting_date': datagen.TSTART,
         'crop': 'Maize',
-        'soil': 'YoloClayLoam6'
+        'soil': 'YoloClayLoam6',
+        'irrigated': True
     }
 
 
