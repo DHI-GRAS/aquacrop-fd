@@ -14,20 +14,31 @@ REQUIRED_CONFIG = [
 ]
 
 
+class BlankPath:
+
+    parent = '(None)'
+    name = '(None)'
+
+
 def write_project_file(outfile, paths, config):
     """Format AquaCrop PRO file
 
     Parameters
     ----------
+    outfile : str
+        path to output project file
     paths : dict str --> Path
         maps input file keys to paths
-
-
+    config : dict
+        config
     """
-
-    missing_paths = set(REQUIRED_PATHS) - set(paths)
-    if missing_paths:
-        raise ValueError(f'Missing paths for {missing_paths}')
+    for name in REQUIRED_PATHS:
+        if name not in paths:
+            paths[name] = BlankPath
+            print(f'Setting path {name} to blank')
+    #missing_paths = set(REQUIRED_PATHS) - set(paths)
+    #if missing_paths:
+        #raise ValueError(f'Missing paths for {missing_paths}')
 
     missing_config = set(REQUIRED_CONFIG) - set(config)
     if missing_config:
