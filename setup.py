@@ -8,7 +8,10 @@ setup(
     author='Jonas Solvsteen',
     author_email='josl@dhigroup.com',
     install_requires=[
-        'xarray'
+        'numpy',
+        'xarray',
+        'rasterio',
+        'affine'
     ],
     extras_require={
         'test': [

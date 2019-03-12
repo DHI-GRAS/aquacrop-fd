@@ -57,3 +57,26 @@ def climate_file(tmp_path_factory, data_dict_10d):
         **data_dict_10d
     )
     return dst
+
+
+@pytest.fixture(scope='session')
+def soil_map_file(tmp_path_factory):
+    import rasterio
+    import affine
+    import numpy as np
+    path = tmp_path_factory.mktemp('aux') / 'soil-map.tif'
+    data = np.random.random_integers(0, 11, size=(1, 200, 300)).astype('uint8')
+    data[data == 11] = 255
+    profile = {
+        'width': data.shape[-1],
+        'height': data.shape[-2],
+        'count': data.shape[0],
+        'nodata': 255,
+        'dtype': data.dtype,
+        'driver': 'GTiff',
+        'crs': {'init': 'epsg:4326'},
+        'transform': affine.Affine(0.002, 0, 0, 0, -0.002, 0)
+    }
+    with rasterio.open(path, 'w', **profile) as dst:
+        dst.write(data)
+    return path
