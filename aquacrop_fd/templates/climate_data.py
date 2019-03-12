@@ -96,9 +96,9 @@ def _write_climate_lines(lines, data_lines):
 def _format_changes(frequency_code, start):
     return {
         'Daily records (1=daily, 2=10-daily and 3=monthly data)': frequency_code,
-        'First day of record (1, 11 or 21 for 10-day or 1 for months)': f'{start:%d}',
-        'First month of record': f'{start:%m}',
-        'First year of record (1901 if not linked to a specific year)': f'{start:%Y}'
+        'First day of record (1, 11 or 21 for 10-day or 1 for months)': f'{start.day}',
+        'First month of record': f'{start.month}',
+        'First year of record (1901 if not linked to a specific year)': f'{start.year}'
     }
 
 

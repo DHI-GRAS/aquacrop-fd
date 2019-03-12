@@ -8,6 +8,6 @@ def test_run_single(sample_config, data_dict_10d, tmp_path):
 
     # replicate input files dict
     data = {name: data_dict_10d.copy() for name in model_setup.REQUIRED_CLIMATE_FILES}
-    data['Climate.TMP']['arrs'] *= 2
+    data['Climate.TMP']['arrs'] = data['Climate.TMP']['arrs'] * 2
 
     run.run_single(rundir=tmp_path, data=data, config=sample_config)

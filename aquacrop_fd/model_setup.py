@@ -18,6 +18,12 @@ REQUIRED_AUX_FILES = ['Irrigation.IRR']
 
 REQUIRED_CONFIG = ['soil', 'crop', 'planting_date']
 
+CLIMATE_NCOLS = {
+    'Climate.TMP': 2,
+    'Climate.ETo': 1,
+    'Climate.PLU': 1
+}
+
 
 def _copy_soil_file(soil, outdir):
     filename = soil + '.SOL'
@@ -57,7 +63,12 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_data_file(filename, outdir, arrs, times, changes=None):
+def write_climate_file(filename, outdir, arrs, times, changes=None):
+
+    ncols = CLIMATE_NCOLS.get(filename, None)
+    if ncols is not None and len(arrs) != ncols:
+        raise ValueError(f'Climate file {filename} requires {ncols} columns. Got {len(arrs)}.')
+
     climate_templates = templates.DATA['climate']
     try:
         src = climate_templates[filename]
@@ -76,7 +87,7 @@ def write_data_file(filename, outdir, arrs, times, changes=None):
 
 
 def copy_climate_file(outdir, filename):
-    src = templates.DATA['climate']['Climate.CO2']
+    src = templates.DATA['climate'][filename]
     dst = outdir / src.name
     shutil.copy(src, dst)
     return dst
@@ -128,7 +139,7 @@ def prepare_data_folder(outdir, data, config):
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
         logger.debug(f'Writing data for {filename}')
-        paths[filename] = write_data_file(
+        paths[filename] = write_climate_file(
             filename=filename,
             outdir=datadir,
             arrs=data[filename]['arrs'],
