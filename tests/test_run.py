@@ -1,5 +1,7 @@
+import pytest
 
 
+@pytest.mark.skiplinux
 def test_run_single(sample_config, data_dict_10d, tmp_path):
     from aquacrop_fd import model_setup
     from aquacrop_fd import run

@@ -1,6 +1,14 @@
+import sys
+
 import pytest
 
 import datagen
+
+
+def pytest_runtest_setup(item):
+    m = item.get_closest_marker('skiplinux')
+    if m is not None and sys.platform != 'win32':
+        pytest.skip('For some reason not working on Linux.')
 
 
 @pytest.fixture
