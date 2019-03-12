@@ -133,8 +133,9 @@ def prepare_data_folder(outdir, data, config):
     logger.debug(f'Project config is: {project_config}')
 
     # write irrigation file
-    irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
-    paths[irrpath.name] = irrpath
+    if config.get('irrigated', False):
+        irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
+        paths[irrpath.name] = irrpath
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
