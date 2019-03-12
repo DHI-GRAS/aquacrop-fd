@@ -1,5 +1,21 @@
 import tempfile
+from pathlib import Path
+
+from aquacrop_fd import model_setup
+from aquacrop_fd import execution
 
 
-def compile_project(rundir):
-    pass
+def run_single(rundir, data, config):
+    executable = execution.deploy(rundir)
+    project_file = model_setup.prepare_data_folder(
+        outdir=rundir,
+        data=data,
+        config=config
+    )
+    execution.run(executable, project_file)
+
+
+def run_batch(data, config):
+    with tempfile.TemporaryDirectory(prefix='acfd_') as tempdir:
+        rundir = Path(tempdir)
+        run_single(rundir, data, config)

@@ -93,6 +93,12 @@ def write_net_irrigation_file(outdir, fraction):
 
 
 def prepare_data_folder(outdir, data, config):
+
+    datadir = outdir / 'DATA'
+    listdir = outdir / 'LIST'
+    for path in [datadir, listdir]:
+        path.mkdir(parents=True, exist_ok=True)
+
     paths = {}
 
     missing_config = set(REQUIRED_CONFIG) - set(config)
@@ -100,8 +106,8 @@ def prepare_data_folder(outdir, data, config):
         raise ValueError(f'Config is missing information: {missing_config}')
 
     # write soil and crop files
-    paths['soil'] = _copy_soil_file(config['soil'], outdir)
-    paths['crop'] = _copy_crop_file(config['crop'], outdir)
+    paths['soil'] = _copy_soil_file(config['soil'], datadir)
+    paths['crop'] = _copy_crop_file(config['crop'], datadir)
 
     # calculate date range for crop type
     crop_cycle_length = _get_crop_cycle_length(paths['crop'])
@@ -116,24 +122,24 @@ def prepare_data_folder(outdir, data, config):
     logger.debug(f'Project config is: {project_config}')
 
     # write irrigation file
-    irrpath = write_net_irrigation_file(outdir, fraction=config.get('fraction', 100))
+    irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
     paths[irrpath.name] = irrpath
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
         paths[filename] = write_data_file(
             filename=filename,
-            outdir=outdir,
+            outdir=datadir,
             arrs=data[filename]['arrs'],
             times=data[filename]['times']
         )
 
     # write CO2 file
     for filename in STATIC_CLIMATE_FILES:
-        paths[filename] = copy_climate_file(outdir, filename)
+        paths[filename] = copy_climate_file(datadir, filename)
 
     # write project file
-    project_file = outdir / 'project.PRO'
+    project_file = listdir / 'project.PRO'
     project.write_project_file(
         outfile=project_file,
         paths=paths,
