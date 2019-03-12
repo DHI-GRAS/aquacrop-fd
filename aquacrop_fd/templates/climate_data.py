@@ -67,7 +67,7 @@ def _format_climate_data(arrs, times=None):
         )
     # format data lines
     data_lines = [
-        ', '.join(f'{value:.4f}' for value in values)
+        '    '.join(f'{value:.4f}' for value in values)
         for values in zip(*arrs)
     ]
     return timekw, data_lines

@@ -68,7 +68,7 @@ def write_data_file(filename, outdir, arrs, times, changes=None):
     dst = outdir / filename
     lines = src.read_text().splitlines()
     try:
-        climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
+        lines = climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {filename}: {err!s}') from err
     dst.write_text('\n'.join(lines))
@@ -127,6 +127,7 @@ def prepare_data_folder(outdir, data, config):
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
+        logger.debug(f'Writing data for {filename}')
         paths[filename] = write_data_file(
             filename=filename,
             outdir=datadir,
