@@ -59,8 +59,8 @@ def sample_config():
 @pytest.fixture
 def climate_file(tmp_path_factory, data_dict_10d):
     from aquacrop_fd import model_setup
-    dst = tmp_path_factory.mktemp('climate') / 'Climate.TMP'
-    model_setup.write_data_file(
+    dst = tmp_path_factory.mktemp('climate') / 'Climate.PLU'
+    model_setup.write_climate_file(
         filename=dst.name,
         outdir=dst.parent,
         **data_dict_10d
