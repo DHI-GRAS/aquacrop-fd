@@ -103,8 +103,26 @@ def write_net_irrigation_file(outdir, fraction):
     return outfile
 
 
-def prepare_data_folder(outdir, data, config):
+def prepare_data_folder(project_name, outdir, data, config):
+    """Write all data, aux, and config files into project directory
 
+    Parameters
+    ----------
+    project_name : str
+        project name, will be used in PRO file name
+    outdir : Path
+        path to write to
+    data : dict
+        maps data file names to arrays
+        must include `time`, too.
+    config : dict
+        config with REQUIRED_CONFIG
+
+    Returns
+    -------
+    Path
+        path to {project_name}.PRO
+    """
     datadir = outdir / 'DATA'
     listdir = outdir / 'LIST'
     for path in [datadir, listdir]:
@@ -152,7 +170,7 @@ def prepare_data_folder(outdir, data, config):
         paths[filename] = copy_climate_file(datadir, filename)
 
     # write project file
-    project_file = listdir / 'Template.PRO'
+    project_file = listdir / f'{project_name}.PRO'
     project.write_project_file(
         outfile=project_file,
         paths=paths,

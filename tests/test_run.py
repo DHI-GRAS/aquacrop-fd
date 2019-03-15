@@ -10,4 +10,9 @@ def test_run_single(sample_config, data_dict_10d, tmp_path):
     data = {name: data_dict_10d.copy() for name in model_setup.REQUIRED_CLIMATE_FILES}
     data['Climate.TMP']['arrs'] = data['Climate.TMP']['arrs'] * 2
 
-    run.run_single(rundir=tmp_path, data=data, config=sample_config)
+    run.run_single(
+        project_name='silly1',
+        rundir=tmp_path,
+        data=data,
+        config=sample_config
+    )
