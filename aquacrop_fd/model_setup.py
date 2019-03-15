@@ -152,7 +152,7 @@ def prepare_data_folder(outdir, data, config):
         paths[filename] = copy_climate_file(datadir, filename)
 
     # write project file
-    project_file = listdir / 'project.PRO'
+    project_file = listdir / 'Template.PRO'
     project.write_project_file(
         outfile=project_file,
         paths=paths,
