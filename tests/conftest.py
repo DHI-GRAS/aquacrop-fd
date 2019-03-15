@@ -50,7 +50,7 @@ def data_dict_10d(data_array_10d):
 def sample_config():
     return {
         'planting_date': datagen.TSTART,
-        'crop': 'MaizeGDD',
+        'crop': 'Maize',
         'soil': 'YoloClayLoam6',
         'irrigated': True
     }
