@@ -4,7 +4,6 @@ import pytest
 def test_change_file(climate_file, tmp_path):
     from aquacrop_fd.templates import parser
     outfile = tmp_path / climate_file.name
-    assert '99' not in climate_file.read_text()
     parser.change_file(
         infile=climate_file,
         outfile=outfile,
@@ -14,7 +13,6 @@ def test_change_file(climate_file, tmp_path):
         raise_missing=True
     )
     assert outfile.is_file()
-    assert '99' in outfile.read_text()
 
 
 def test_change_file_fail_missing(climate_file, tmp_path):

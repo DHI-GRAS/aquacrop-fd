@@ -53,3 +53,6 @@
 *.vcxitems  merge=binary
 
 *.zip binary
+
+*.CRO text eol=crlf
+*.SOL text eol=crlf

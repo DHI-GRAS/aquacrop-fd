@@ -18,6 +18,12 @@ REQUIRED_AUX_FILES = ['Irrigation.IRR']
 
 REQUIRED_CONFIG = ['soil', 'crop', 'planting_date']
 
+CLIMATE_NCOLS = {
+    'Climate.TMP': 2,
+    'Climate.ETo': 1,
+    'Climate.PLU': 1
+}
+
 
 def _copy_soil_file(soil, outdir):
     filename = soil + '.SOL'
@@ -57,7 +63,12 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_data_file(filename, outdir, arrs, times, changes=None):
+def write_climate_file(filename, outdir, arrs, times, changes=None):
+
+    ncols = CLIMATE_NCOLS.get(filename, None)
+    if ncols is not None and len(arrs) != ncols:
+        raise ValueError(f'Climate file {filename} requires {ncols} columns. Got {len(arrs)}.')
+
     climate_templates = templates.DATA['climate']
     try:
         src = climate_templates[filename]
@@ -68,7 +79,7 @@ def write_data_file(filename, outdir, arrs, times, changes=None):
     dst = outdir / filename
     lines = src.read_text().splitlines()
     try:
-        climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
+        lines = climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {filename}: {err!s}') from err
     dst.write_text('\n'.join(lines))
@@ -76,7 +87,7 @@ def write_data_file(filename, outdir, arrs, times, changes=None):
 
 
 def copy_climate_file(outdir, filename):
-    src = templates.DATA['climate']['Climate.CO2']
+    src = templates.DATA['climate'][filename]
     dst = outdir / src.name
     shutil.copy(src, dst)
     return dst
@@ -92,7 +103,31 @@ def write_net_irrigation_file(outdir, fraction):
     return outfile
 
 
-def prepare_data_folder(outdir, data, config):
+def prepare_data_folder(project_name, outdir, data, config):
+    """Write all data, aux, and config files into project directory
+
+    Parameters
+    ----------
+    project_name : str
+        project name, will be used in PRO file name
+    outdir : Path
+        path to write to
+    data : dict
+        maps data file names to arrays
+        must include `time`, too.
+    config : dict
+        config with REQUIRED_CONFIG
+
+    Returns
+    -------
+    Path
+        path to {project_name}.PRO
+    """
+    datadir = outdir / 'DATA'
+    listdir = outdir / 'LIST'
+    for path in [datadir, listdir]:
+        path.mkdir(parents=True, exist_ok=True)
+
     paths = {}
 
     missing_config = set(REQUIRED_CONFIG) - set(config)
@@ -100,8 +135,8 @@ def prepare_data_folder(outdir, data, config):
         raise ValueError(f'Config is missing information: {missing_config}')
 
     # write soil and crop files
-    paths['soil'] = _copy_soil_file(config['soil'], outdir)
-    paths['crop'] = _copy_crop_file(config['crop'], outdir)
+    paths['soil'] = _copy_soil_file(config['soil'], datadir)
+    paths['crop'] = _copy_crop_file(config['crop'], datadir)
 
     # calculate date range for crop type
     crop_cycle_length = _get_crop_cycle_length(paths['crop'])
@@ -116,24 +151,26 @@ def prepare_data_folder(outdir, data, config):
     logger.debug(f'Project config is: {project_config}')
 
     # write irrigation file
-    irrpath = write_net_irrigation_file(outdir, fraction=config.get('fraction', 100))
-    paths[irrpath.name] = irrpath
+    if config.get('irrigated', False):
+        irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
+        paths[irrpath.name] = irrpath
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
-        paths[filename] = write_data_file(
+        logger.debug(f'Writing data for {filename}')
+        paths[filename] = write_climate_file(
             filename=filename,
-            outdir=outdir,
+            outdir=datadir,
             arrs=data[filename]['arrs'],
             times=data[filename]['times']
         )
 
     # write CO2 file
     for filename in STATIC_CLIMATE_FILES:
-        paths[filename] = copy_climate_file(outdir, filename)
+        paths[filename] = copy_climate_file(datadir, filename)
 
     # write project file
-    project_file = outdir / 'project.PRO'
+    project_file = listdir / f'{project_name}.PRO'
     project.write_project_file(
         outfile=project_file,
         paths=paths,
