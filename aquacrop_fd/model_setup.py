@@ -123,7 +123,7 @@ def prepare_data_folder(project_name, outdir, data, config):
     Path
         path to {project_name}.PRO
     """
-    datadir = outdir / 'DATA'
+    datadir = outdir / f'DATA-{project_name}'
     listdir = outdir / 'LIST'
     for path in [datadir, listdir]:
         path.mkdir(parents=True, exist_ok=True)

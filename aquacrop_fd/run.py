@@ -6,9 +6,10 @@ from aquacrop_fd import execution
 
 
 def run_single(project_name, rundir, data, config):
-    executable = execution.deploy(rundir)
+    executable, listdir = execution.deploy(rundir)
     project_file = model_setup.prepare_data_folder(
         project_name=project_name,
+        listdir=listdir,
         outdir=rundir,
         data=data,
         config=config

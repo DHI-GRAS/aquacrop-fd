@@ -13,7 +13,7 @@ def deploy(rundir):
 
     Parameters
     ----------
-    rundir : str
+    rundir : Path
         run directory
 
     Returns
@@ -23,7 +23,11 @@ def deploy(rundir):
     """
     with zipfile.ZipFile(EXE_PACKAGE) as zf:
         zf.extractall(rundir)
-    return next(Path(rundir).glob('*.exe'))
+    exe = next(Path(rundir).glob('*.exe'))
+    listdir = Path(rundir) / 'LIST'
+    if not listdir.is_dir():
+        raise RuntimeError(f'Something went wrong creating LIST dir in {listdir}')
+    return exe, listdir
 
 
 def run(executable, project_file, timeout=5):
