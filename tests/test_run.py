@@ -13,6 +13,7 @@ def test_run_single(sample_config, data_dict_10d, tmp_path):
     run.run_single(
         project_name='silly1',
         rundir=tmp_path,
-        data=data,
+        datadir=tmp_path / 'DATA',
+        data_by_name=data,
         config=sample_config
     )

@@ -25,7 +25,7 @@ CLIMATE_NCOLS = {
 }
 
 
-def _copy_soil_file(soil, outdir):
+def _copy_soil_file(soil, datadir):
     filename = soil + '.SOL'
     soils = templates.DATA['soil']
     try:
@@ -34,12 +34,12 @@ def _copy_soil_file(soil, outdir):
         raise ValueError(
             f'Soil file {filename} not found. Choose from {list(soils)}.'
         )
-    dst = outdir / filename
+    dst = datadir / filename
     shutil.copy(src, dst)
     return dst
 
 
-def _copy_crop_file(crop, outdir):
+def _copy_crop_file(crop, datadir):
     # first letter capital
     filename = crop + '.CRO'
     crops = templates.DATA['crop']
@@ -49,7 +49,7 @@ def _copy_crop_file(crop, outdir):
         raise ValueError(
             f'Soil file {filename} not found. Choose from {list(crops)}.'
         )
-    dst = outdir / filename
+    dst = datadir / filename
     shutil.copy(src, dst)
     return dst
 
@@ -63,8 +63,27 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_climate_file(filename, outdir, arrs, times, changes=None):
+def write_climate_file(filename, datadir, arrs, times, changes=None):
+    """Write climate file
 
+    Parameters
+    ----------
+    filename : str
+        template file name
+    datadir : Path
+        directory to write to
+    arrs : list of 1D arrays
+        data to write to columns
+    times : 1D array of datetime.datetime
+        times
+    changes : dict, optional
+        additional changes to apply to template file
+
+    Returns
+    -------
+    Path
+        path to created data file
+    """
     ncols = CLIMATE_NCOLS.get(filename, None)
     if ncols is not None and len(arrs) != ncols:
         raise ValueError(f'Climate file {filename} requires {ncols} columns. Got {len(arrs)}.')
@@ -76,7 +95,7 @@ def write_climate_file(filename, outdir, arrs, times, changes=None):
         raise ValueError(
             f'Climate file {filename} not found. Choose from {list(climate_templates)}'
         ) from err
-    dst = outdir / filename
+    dst = datadir / filename
     lines = src.read_text().splitlines()
     try:
         lines = climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
@@ -86,16 +105,16 @@ def write_climate_file(filename, outdir, arrs, times, changes=None):
     return dst
 
 
-def copy_climate_file(outdir, filename):
+def copy_climate_file(datadir, filename):
     src = templates.DATA['climate'][filename]
-    dst = outdir / src.name
+    dst = datadir / src.name
     shutil.copy(src, dst)
     return dst
 
 
-def write_net_irrigation_file(outdir, fraction):
+def write_net_irrigation_file(datadir, fraction):
     infile = templates.DATA['climate']['Irrigation.IRR']
-    outfile = outdir / infile.name
+    outfile = datadir / infile.name
     changes = {
         'Allowable depletion of RAW (%)': fraction
     }
@@ -103,17 +122,19 @@ def write_net_irrigation_file(outdir, fraction):
     return outfile
 
 
-def prepare_data_folder(project_name, outdir, data, config):
+def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
     """Write all data, aux, and config files into project directory
 
     Parameters
     ----------
     project_name : str
         project name, will be used in PRO file name
-    outdir : Path
-        path to write to
-    data : dict
-        maps data file names to arrays
+    rundir : Path
+        path to store executables in
+    datadir : Path
+        path to store data files in
+    data_by_name : dict
+        maps data file names to 1D arrays
         must include `time`, too.
     config : dict
         config with REQUIRED_CONFIG
@@ -123,8 +144,7 @@ def prepare_data_folder(project_name, outdir, data, config):
     Path
         path to {project_name}.PRO
     """
-    datadir = outdir / f'DATA-{project_name}'
-    listdir = outdir / 'LIST'
+    listdir = rundir / 'LIST'
     for path in [datadir, listdir]:
         path.mkdir(parents=True, exist_ok=True)
 
@@ -160,9 +180,9 @@ def prepare_data_folder(project_name, outdir, data, config):
         logger.debug(f'Writing data for {filename}')
         paths[filename] = write_climate_file(
             filename=filename,
-            outdir=datadir,
-            arrs=data[filename]['arrs'],
-            times=data[filename]['times']
+            datadir=datadir,
+            arrs=data_by_name[filename]['arrs'],
+            times=data_by_name[filename]['times']
         )
 
     # write CO2 file

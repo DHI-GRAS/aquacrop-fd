@@ -62,7 +62,7 @@ def climate_file(tmp_path_factory, data_dict_10d):
     dst = tmp_path_factory.mktemp('climate') / 'Climate.PLU'
     model_setup.write_climate_file(
         filename=dst.name,
-        outdir=dst.parent,
+        datadir=dst.parent,
         **data_dict_10d
     )
     return dst
@@ -74,7 +74,7 @@ def soil_map_file(tmp_path_factory):
     import affine
     import numpy as np
     path = tmp_path_factory.mktemp('aux') / 'soil-map.tif'
-    data = np.random.random_integers(0, 11, size=(1, 200, 300)).astype('uint8')
+    data = np.random.randint(0, 11 + 1, size=(1, 200, 300)).astype('uint8')
     data[data == 11] = 255
     profile = {
         'width': data.shape[-1],
