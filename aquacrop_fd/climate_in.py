@@ -76,4 +76,6 @@ def select_align_inputs(
         da.name = name
         darrs_pt_time[name] = da
 
-    return xr.merge(darrs_pt_time.values())
+    ds = xr.merge(darrs_pt_time.values())
+    ds.attrs.update(ixds.attrs)
+    return ds
