@@ -35,3 +35,19 @@ def run(executable, project_file, timeout=5):
     logger.debug(f'Running {cmd}')
     print(cmd)
     return subprocess.run(cmd, check=True, timeout=5)
+
+
+def get_output_files(rundir, project_name):
+
+    outdir = rundir / 'OUTP'
+
+    names = {key: f'{project_name}PRO{key}.OUT' for key in ['day', 'season']}
+
+    paths = {}
+    for key, name in names.items():
+        path = outdir / name
+        if not path.is_file():
+            raise RuntimeError(f'Output file not found in {path}.')
+        paths[key] = path
+
+    return paths

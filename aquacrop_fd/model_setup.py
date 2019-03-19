@@ -143,6 +143,8 @@ def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
     -------
     Path
         path to {project_name}.PRO
+    dict
+        project config
     """
     listdir = rundir / 'LIST'
     for path in [datadir, listdir]:
@@ -197,4 +199,4 @@ def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
         config=project_config
     )
 
-    return project_file
+    return project_file, project_config
