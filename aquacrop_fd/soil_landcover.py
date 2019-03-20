@@ -113,7 +113,9 @@ def find_class_points(paths, class_values, bounds=None):
             for name, data in {'lon': lon, 'lat': lat, 'i': ii, 'j': jj}.items()
         }
         ds = xr.Dataset(data_vars, coords={'point': np.arange(len(lon))})
-        ds.attrs.update({name: vrt.profile[name] for name in ['transform', 'width', 'height']})
+        ds.attrs.update({name: vrt.profile[name] for name in ['width', 'height']})
+        # properly serialize transform
+        ds.attrs['transform'] = list(vrt.profile['transform'])
         return ds
 
 

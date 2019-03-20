@@ -8,11 +8,15 @@ def test_prepare_data_folder(sample_config, data_dict_10d, tmp_path):
     data['Climate.TMP']['arrs'] = data['Climate.TMP']['arrs'] * 2
     print(data)
 
+    datadir = tmp_path / 'DATA'
+    datadir.mkdir(exist_ok=True)
+
     # prepare data folder
     project_file = model_setup.prepare_data_folder(
         project_name='funny1',
-        outdir=tmp_path,
-        data=data,
+        rundir=tmp_path,
+        datadir=datadir,
+        data_by_name=data,
         config=sample_config
     )
 
