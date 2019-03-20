@@ -130,7 +130,7 @@ def run_ds(ds, config, nproc=None, chunksize=100):
     if nproc is None:
         nproc = os.cpu_count()
     max_workers = min(nchunks, nproc)
-
+    logger.info(f'Processing {nchunks} chunks on {max_workers} workers')
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         all_dsout = executor.map(_worker, jobs)
 

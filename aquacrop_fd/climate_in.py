@@ -64,6 +64,7 @@ def select_align_inputs(
         class_values=[soil_class, land_cover_class],
         bounds=bounds
     )
+    logger.info(f'Found {len(ixds.point)} points')
 
     # interpolate in space
     darrs_pt = {}

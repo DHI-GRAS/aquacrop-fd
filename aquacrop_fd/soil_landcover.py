@@ -6,19 +6,6 @@ import rasterio.windows
 import numpy as np
 import xarray as xr
 
-CROP_TYPE_MAP = {
-    'Clay': 1,
-    'ClayLoam': 2,
-    'LoamySand': 3,
-    'Sand': 4,
-    'SandyClay': 5,
-    'SandyLoam': 6,
-    'Silt': 7,
-    'SiltClayLoam': 8,
-    'SiltLoam': 9,
-    'SiltyClay': 10
-}
-
 
 CRS_WGS = rasterio.crs.CRS({'init': 'epsg:4326'})
 
@@ -104,6 +91,11 @@ def find_class_points(paths, class_values, bounds=None):
         assert np.all(jj < vrt.height)
         assert np.all(ii < vrt.width)
 
+        if len(jj) == 0:
+            raise ValueError(
+                f'No points found intersecting bounding box and class values {class_values}.'
+            )
+
         # convert pixel indices to lon, lat coordinates
         lon, lat = vrt.transform * (ii, jj)
 
@@ -143,3 +135,11 @@ def interpolate_to_points(da, ixds):
     for name in ['j', 'i']:
         ida[name] = ixds[name].isel(point=selection)
     return ida
+
+
+def map_points_to_raster(ds):
+    shape = tuple(ds.attrs[k] for k in ['height', 'width'])
+    for name, da in ds.data_vars.items():
+        data = np.full(shape=shape, fill_value=np.nan, dtype='float')
+        data[ds['j'], ds['i']] = da.values
+        pass

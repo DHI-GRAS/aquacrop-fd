@@ -39,16 +39,20 @@ def _copy_soil_file(soil, datadir):
     return dst
 
 
-def _copy_crop_file(crop, datadir):
-    # first letter capital
+def _find_crop_file(crop):
     filename = crop + '.CRO'
     crops = templates.DATA['crop']
     try:
-        src = crops[filename]
+        return crops[filename]
     except KeyError:
         raise ValueError(
-            f'Soil file {filename} not found. Choose from {list(crops)}.'
+            f'Crop file {filename} not found. Choose from {list(crops)}.'
         )
+
+
+def _copy_crop_file(crop, datadir):
+    filename = crop + '.CRO'
+    src = _find_crop_file(crop)
     dst = datadir / filename
     shutil.copy(src, dst)
     return dst
@@ -120,6 +124,12 @@ def write_net_irrigation_file(datadir, fraction):
     }
     parser.change_file(infile, outfile, changes)
     return outfile
+
+
+def get_crop_cycle_length(crop):
+    """Get crop cycle length for named crop"""
+    path = _find_crop_file(crop)
+    return _get_crop_cycle_length(path)
 
 
 def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
