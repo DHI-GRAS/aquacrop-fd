@@ -63,7 +63,7 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_climate_file(filename, datadir, arrs, times, changes=None):
+def write_climate_file(filename, datadir, arrs, time, changes=None):
     """Write climate file
 
     Parameters
@@ -74,8 +74,8 @@ def write_climate_file(filename, datadir, arrs, times, changes=None):
         directory to write to
     arrs : list of 1D arrays
         data to write to columns
-    times : 1D array of datetime.datetime
-        times
+    time : 1D array of datetime.datetime
+        time
     changes : dict, optional
         additional changes to apply to template file
 
@@ -98,7 +98,7 @@ def write_climate_file(filename, datadir, arrs, times, changes=None):
     dst = datadir / filename
     lines = src.read_text().splitlines()
     try:
-        lines = climate_data.write_climate_data(lines, arrs, times=times, extra_changes=changes)
+        lines = climate_data.write_climate_data(lines, arrs, time=time, extra_changes=changes)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {filename}: {err!s}') from err
     dst.write_text('\n'.join(lines))
@@ -122,15 +122,15 @@ def write_net_irrigation_file(datadir, fraction):
     return outfile
 
 
-def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
+def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
     """Write all data, aux, and config files into project directory
 
     Parameters
     ----------
     project_name : str
         project name, will be used in PRO file name
-    rundir : Path
-        path to store executables in
+    listdir : Path
+        path to store project file in
     datadir : Path
         path to store data files in
     data_by_name : dict
@@ -146,7 +146,6 @@ def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
     dict
         project config
     """
-    listdir = rundir / 'LIST'
     for path in [datadir, listdir]:
         path.mkdir(parents=True, exist_ok=True)
 
@@ -183,8 +182,8 @@ def prepare_data_folder(project_name, rundir, datadir, data_by_name, config):
         paths[filename] = write_climate_file(
             filename=filename,
             datadir=datadir,
-            arrs=data_by_name[filename]['arrs'],
-            times=data_by_name[filename]['times']
+            arrs=data_by_name[filename],
+            time=data_by_name['time']
         )
 
     # write CO2 file

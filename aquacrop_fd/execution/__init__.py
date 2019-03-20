@@ -30,19 +30,18 @@ def deploy(rundir):
     return exe, listdir
 
 
-def run(executable, project_file, timeout=5):
-    cmd = ' '.join(map(str, [executable, project_file]))
+def run(executable, project_file=None, timeout=5):
+    if project_file is None:
+        cmd = str(executable)
+    else:
+        cmd = ' '.join(map(str, [executable, project_file]))
     logger.debug(f'Running {cmd}')
-    print(cmd)
-    return subprocess.run(cmd, check=True, timeout=5)
+    return subprocess.run(cmd, check=True, timeout=timeout)
 
 
 def get_output_files(rundir, project_name):
-
     outdir = rundir / 'OUTP'
-
     names = {key: f'{project_name}PRO{key}.OUT' for key in ['day', 'season']}
-
     paths = {}
     for key, name in names.items():
         path = outdir / name

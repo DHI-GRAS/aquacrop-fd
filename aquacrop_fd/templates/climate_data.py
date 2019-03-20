@@ -46,7 +46,7 @@ def _get_frequency_code(frequency):
         raise ValueError(f'No corresponding code found for frequency {frequency}')
 
 
-def _format_climate_data(arrs, times=None):
+def _format_climate_data(arrs, time=None):
     """Format AquaCrop input data files"""
     # check shapes
     if (len(set(np.shape(a) for a in arrs)) > 1) or (np.ndim(arrs[0]) != 1):
@@ -54,11 +54,11 @@ def _format_climate_data(arrs, times=None):
             'Data arrays must all be 1D and same length'
         )
     # get frequency code and start date
-    if times is not None:
-        frequency = _get_frequency(times)
+    if time is not None:
+        frequency = _get_frequency(time)
         timekw = dict(
             frequency_code=_get_frequency_code(frequency),
-            start=times[0]
+            start=time[0]
         )
     else:
         timekw = dict(
@@ -102,8 +102,8 @@ def _format_changes(frequency_code, start):
     }
 
 
-def write_climate_data(lines, arrs, times=None, extra_changes=None):
-    timekw, data_lines = _format_climate_data(arrs=arrs, times=times)
+def write_climate_data(lines, arrs, time=None, extra_changes=None):
+    timekw, data_lines = _format_climate_data(arrs=arrs, time=time)
     changes = _format_changes(**timekw)
     if extra_changes is not None:
         changes.update(extra_changes)

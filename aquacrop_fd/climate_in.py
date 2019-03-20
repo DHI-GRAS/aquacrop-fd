@@ -12,6 +12,20 @@ DARR_NAMES = ['PLU', 'ETo', 'TMP_min', 'TMP_max']
 DARR_NAMES_DAILY = ['PLU']
 
 
+def remove_empty_points(ds):
+    """Remove points where at least one of the variables is all NaN"""
+    all_nodata = ds.count(dim='time') == 0
+    bad = False
+    for da in all_nodata.data_vars.values():
+        bad |= da
+    if bad.any():
+        dssel = ds.isel(point=~bad)
+        dssel.attrs.update(ds.attrs)
+        return dssel
+    else:
+        return ds
+
+
 def select_align_inputs(
         darrs,
         soil_map_path, land_cover_path, soil_class, land_cover_class,
@@ -78,4 +92,4 @@ def select_align_inputs(
 
     ds = xr.merge(darrs_pt_time.values())
     ds.attrs.update(ixds.attrs)
-    return ds
+    return remove_empty_points(ds)

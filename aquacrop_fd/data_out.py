@@ -68,3 +68,8 @@ def select_final_output(df):
         'final_yield': df['Brelative'][-1],
         'time': df.index[-1].to_pydatetime()
     }
+
+
+def parse_selected_output(path):
+    df = parse_daily_output(path)
+    return select_final_output(df)
