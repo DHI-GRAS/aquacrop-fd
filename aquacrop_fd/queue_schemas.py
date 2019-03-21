@@ -2,8 +2,8 @@ from marshmallow import Schema, fields, validate
 
 
 class GeometrySchema(Schema):
-    coordinates = fields.List(fields.List(fields.List(fields.Float)))
-    type = fields.String(validate.OneOf(['Polygon']))
+    coordinates = fields.List(fields.List(fields.List(fields.Float)), required=True)
+    type = fields.String(validate.OneOf(['Polygon', 'Rectangle']), required=True)
 
 
 class JobSchema(Schema):

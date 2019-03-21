@@ -1,5 +1,7 @@
 from pathlib import Path
+import datetime
 import json
+import logging
 
 import click
 import dateutil.parser
@@ -30,33 +32,55 @@ class OutdirMakedirs(click.ParamType):
         return path
 
 
+def setup_logging(debug=False, log_dir=None):
+    level = 'DEBUG' if debug else 'INFO'
+    logger = logging.getLogger('aquacrop_fd')
+    logger.setLevel(level)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    ch_fmt = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+    ch.setFormatter(ch_fmt)
+    logger.addHandler(ch)
+
+    if log_dir is not None:
+        now = datetime.datetime.now()
+        logfname = f'{now:%Y%m%d}-{now:%H%M%S}.log'
+        logfile = Path(log_dir) / logfname
+        fh = logging.FileHandler(logfile)
+        fh.setLevel(level)
+        fh_fmt = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+        fh.setFormatter(fh_fmt)
+        logger.addHandler(fh)
+
+
 @click.command()
 @click.option(
     '--plu', 'plu_path', required=True,
     help='Path to daily rain input file (pattern)'
 )
 @click.option(
-    '--eto', 'eto_path', type=click.Path(dir_okay=False, exist=True),
+    '--eto', 'eto_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean ETo input file'
 )
 @click.option(
-    '--tmp-min', 'tmp_min_path', type=click.Path(dir_okay=False, exist=True),
+    '--tmp-min', 'tmp_min_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean minimum temperature input file'
 )
 @click.option(
-    '--tmp-max', 'tmp_max_path', type=click.Path(dir_okay=False, exist=True),
+    '--tmp-max', 'tmp_max_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean maximum temperature input file'
 )
 @click.option(
-    '--soil-map', 'soil_map_path', type=click.Path(dir_okay=False, exist=True),
+    '--soil-map', 'soil_map_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to soil map file'
 )
 @click.option(
-    '--land-cover-map', 'land_cover_path', type=click.Path(dir_okay=False, exist=True),
+    '--land-cover-map', 'land_cover_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to soil map file'
 )
@@ -81,7 +105,12 @@ class OutdirMakedirs(click.ParamType):
     '--geometry', type=GeoJSONFile(), required=True,
     help='Path to GeoJSON file with bounds geometry'
 )
-def run_cli(**kwargs):
+@click.option(
+    '--log-dir', type=OutdirMakedirs(), default=None,
+    help='Write log files and job files to this directory'
+)
+def run_cli(log_dir, **kwargs):
+    setup_logging(log_dir=log_dir)
     interface.interface(**kwargs)
 
 
@@ -91,27 +120,27 @@ def run_cli(**kwargs):
     help='Path to daily rain input file (pattern)'
 )
 @click.option(
-    '--eto', 'eto_path', type=click.Path(dir_okay=False, exist=True),
+    '--eto', 'eto_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean ETo input file'
 )
 @click.option(
-    '--tmp-min', 'tmp_min_path', type=click.Path(dir_okay=False, exist=True),
+    '--tmp-min', 'tmp_min_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean minimum temperature input file'
 )
 @click.option(
-    '--tmp-max', 'tmp_max_path', type=click.Path(dir_okay=False, exist=True),
+    '--tmp-max', 'tmp_max_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to monthly mean maximum temperature input file'
 )
 @click.option(
-    '--soil-map', 'soil_map_path', type=click.Path(dir_okay=False, exist=True),
+    '--soil-map', 'soil_map_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to soil map file'
 )
 @click.option(
-    '--land-cover-map', 'land_cover_path', type=click.Path(dir_okay=False, exist=True),
+    '--land-cover-map', 'land_cover_path', type=click.Path(dir_okay=False, exists=True),
     required=True,
     help='Path to soil map file'
 )
@@ -122,6 +151,15 @@ def run_cli(**kwargs):
 @click.option(
     '--api-url', required=True, help='API URL'
 )
-def run_queues(**kwargs):
-    from aquqcrop_fd import queue_interface
+@click.argument(
+    'job_files', type=click.Path(dir_okay=False, exists=True), nargs=-1,
+    default=None
+)
+@click.option(
+    '--log-dir', type=OutdirMakedirs(), default=None,
+    help='Write log files and job files to this directory'
+)
+def run_queues(log_dir, **kwargs):
+    from aquacrop_fd import queue_interface
+    setup_logging(log_dir=log_dir)
     queue_interface.work_queue(**kwargs)

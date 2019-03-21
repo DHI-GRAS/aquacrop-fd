@@ -14,8 +14,6 @@ REQUIRED_CLIMATE_FILES = ['Climate.TMP', 'Climate.ETo', 'Climate.PLU']
 
 STATIC_CLIMATE_FILES = ['Climate.CLI', 'Climate.CO2']
 
-REQUIRED_AUX_FILES = ['Irrigation.IRR']
-
 REQUIRED_CONFIG = ['soil', 'crop', 'planting_date']
 
 CLIMATE_NCOLS = {
@@ -60,10 +58,17 @@ def _copy_crop_file(crop, datadir):
 
 def _get_crop_cycle_length(crop_file):
     data = parser.parse_file(crop_file)
-    try:
-        daystr = data["Calendar Days: from sowing to maturity (length of crop cycle)"]
-    except KeyError:
+    possible_keys = [
+        'Calendar Days: from sowing to maturity (length of crop cycle)',
+        'Calendar Days: from transplanting to maturity'
+    ]
+    for key in possible_keys:
+        if key in data:
+            daystr = data[key]
+            break
+    else:
         raise KeyError(f'length of crop cycle not found in crop file {crop_file}')
+
     return datetime.timedelta(days=int(daystr))
 
 
@@ -184,7 +189,9 @@ def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
     # write irrigation file
     if config.get('irrigated', False):
         irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
-        paths[irrpath.name] = irrpath
+    else:
+        irrpath = project.BlankPath()
+    paths['Irrigation.IRR'] = irrpath
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:

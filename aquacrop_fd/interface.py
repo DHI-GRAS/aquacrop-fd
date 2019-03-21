@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import json
 
 import shapely.geometry
 import xarray as xr
@@ -69,6 +70,8 @@ def interface(
     logger.info('Time window is {start:%Y-%m-%d} {end:%Y-%m-%d}'.format(**selkw))
 
     if geometry is not None:
+        if isinstance(geometry, str):
+            geometry = json.loads(geometry)
         geom = shapely.geometry.shape(geometry)
         selkw['bounds'] = geom.bounds
 
@@ -91,16 +94,28 @@ def interface(
         # align inputs in time and space
         data_aligned = climate_in.select_align_inputs(darrs=darrs, **selkw)
 
-    # add variable with soil class name
+    # add soil class names
     data_aligned = _soil_class_values_to_names(data_aligned)
 
     # run AquaCrop
     dsout = run.run_ds(data_aligned, config=config, nproc=nproc)
 
     # return this information also
-    dsout = dsout.assign({'soil_class_name': data_aligned['soil_class_name']})
+    dsout = dsout.assign({'soil_class': data_aligned['soil_class']})
 
     # map points back to 2D grid
     logger.info('Map points dataset to 2D raster')
     dsout_latlon = soil_landcover.points_to_2d(dsout)
+
+    # add some meta information
+    meta_attrs = config.copy()
+    meta_attrs.update({
+        'soil_class_map': SOIL_CLASS_MAP,
+        'land_cover_class_map': LAND_COVER_CLASS_MAP,
+        'planting_date': f'{planting_date:%Y-%m-%d}',
+        'bounds': selkw.get('bounds', None)
+    })
+    dsout_latlon.attrs.update(
+        {k: (v if isinstance(v, str) else json.dumps(v)) for k, v in meta_attrs.items()}
+    )
     return dsout_latlon

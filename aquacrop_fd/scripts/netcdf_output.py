@@ -5,8 +5,6 @@ TIME_ENCODING = dict(
 
 NETCDF_FORMAT = 'NETCDF3_CLASSIC'
 
-DATAVAR_ENCODING = dict(dtype='float32')
-
 LATLON_ATTRIBUTES = {
     'lat': {
         'standard_name': 'latitude',
@@ -24,12 +22,9 @@ LATLON_ENCODING = {
 CF_CONVENTIONS = 'CF-1.6'
 
 
-def generate_xr_encoding_dict(ds, datavar_encoding=DATAVAR_ENCODING):
+def generate_xr_encoding_dict(ds):
     """Generate dictionary to feed to ds.to_netcdf(encoding={})"""
     encoding = {}
-    if datavar_encoding:
-        for k, da in ds.data_vars.items():
-            encoding[k] = datavar_encoding.copy()
     if 'time' in ds.coords:
         encoding['time'] = TIME_ENCODING
     if 'lon' in ds.coords and 'lat' in ds.coords:
@@ -47,33 +42,19 @@ def to_netcdf(ds, fname):
         DataArray will be converted
     fname : str
         path to output file (.nc)
-    datavar_encoding : dict
-        encoding for data variables (dtype, _FillValue)
-        default: FD default
-        set to None to disable
-    unlimited_time : bool
-        make time dimension unlimited
-    format : str
-        netCDF format
-    attr_whitelist : list of str
-        remove attributes not on this list from
-        data variables
-    **kwargs : dict
-        keyword arguments passed to ds.to_netcdf
     """
-
     for name in LATLON_ATTRIBUTES:
         ds[name].attrs.update(LATLON_ATTRIBUTES[name])
 
     # set output format
-    kw = {'format': format}
+    kw = {'format': NETCDF_FORMAT}
 
     # figure out encoding
-    encoding = generate_xr_encoding_dict(ds, datavar_encoding=DATAVAR_ENCODING)
+    encoding = generate_xr_encoding_dict(ds)
     if 'encoding' in kw:
         encoding.update(kw['encoding'])
     kw['encoding'] = encoding
 
     # set Conventions
     ds.attrs['Conventions'] = CF_CONVENTIONS
-    return ds.to_netcdf(fname, **kw)
+    return ds.to_netcdf(str(fname), **kw)

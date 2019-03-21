@@ -1,5 +1,4 @@
 import os
-import itertools
 from pathlib import Path
 import shutil
 import functools
@@ -15,9 +14,6 @@ from aquacrop_fd import execution
 from aquacrop_fd import data_out
 
 logger = logging.getLogger(__name__)
-
-MAX_WORKERS = 5
-CHUNKSIZES = [170]
 
 
 def run_single(project_name, rundir, datadir, data_by_name, config):
@@ -120,28 +116,28 @@ def _chunk_worker(ds, config):
     return dsout
 
 
-def run_ds(ds, config, nproc=None):
+def run_ds(ds, config, chunksize=20, nproc=None):
     npoints = len(ds.point)
-    chunksizes = itertools.cycle(CHUNKSIZES)
-    ntaken = 0
+    nchunks = int(np.ceil(npoints / chunksize))
     jobs = []
-    while ntaken < npoints:
-        chunksize = next(chunksizes)
-        ptslice = slice(ntaken, ntaken + chunksize)
+    for k in range(nchunks):
+        ptslice = slice(k * chunksize, (k + 1) * chunksize)
         dschunk = ds.isel(point=ptslice)
         if len(dschunk.point) == 0:
             # just in case
             continue
         jobs.append(dschunk)
-        ntaken += chunksize
+
+    if not jobs:
+        raise ValueError('No points to process.')
 
     _worker = functools.partial(_chunk_worker, config=config)
 
     if nproc is None:
         nproc = os.cpu_count()
-    max_workers = min(len(jobs), nproc, MAX_WORKERS)
+    max_workers = min(len(jobs), nproc)
     logger.info(
-        f'Processing {len(jobs)} jobs on {max_workers} workers'
+        f'Processing {len(jobs)} jobs of {chunksize} points on {max_workers} workers'
     )
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         all_dsout = executor.map(_worker, jobs)

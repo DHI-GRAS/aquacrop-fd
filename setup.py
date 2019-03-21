@@ -9,8 +9,8 @@ setup(
     author_email='josl@dhigroup.com',
     entry_points="""
     [console_scripts]
-    aquacrop-run=aquacrop_fd.scripts:run_cli
-    aquacrop-queues=aquacrop_fd.scripts:run_queues
+    aquacrop-run=aquacrop_fd.scripts.cli:run_cli
+    aquacrop-queues=aquacrop_fd.scripts.cli:run_queues
     """,
     install_requires=[
         'numpy',
@@ -19,7 +19,12 @@ setup(
         'pandas',
         'affine',
         'click',
-        'python-dateutil'
+        'scipy',
+        'dask',
+        'netcdf4',
+        'python-dateutil',
+        'marshmallow==3.0.0rc1',
+        'requests'
     ],
     extras_require={
         'test': [
