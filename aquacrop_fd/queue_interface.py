@@ -90,6 +90,7 @@ def work_queue(
             write_job_file(job_file_dir, job)
 
         guid = job['guid']
+        logger.info(f'Processing job {guid}')
 
         kw = {
             k: job[k] for k in
