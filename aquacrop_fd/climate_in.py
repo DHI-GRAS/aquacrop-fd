@@ -95,5 +95,7 @@ def select_align_inputs(
 
     logger.info('Merging variables into one dataset')
     ds = xr.merge(darrs_pt_time.values())
+    # add soil class values as variable
+    ds = ds.assign({'soil_class': ixds['extracted']})
     ds.attrs.update(ixds.attrs)
     return remove_empty_points(ds)

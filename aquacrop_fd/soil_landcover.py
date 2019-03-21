@@ -19,7 +19,10 @@ def _datasets_are_congruent(datasets):
     return (len(profiles) == 1), profiles
 
 
-def select_extract_class_points(select_path, extract_path, select_class, bounds=None):
+def select_extract_class_points(
+        select_path, extract_path, select_class, bounds=None,
+        remove_empty_extracted=True,
+):
     """Find points corresponding to class
 
     Parameters
@@ -33,6 +36,8 @@ def select_extract_class_points(select_path, extract_path, select_class, bounds=
     bounds : tuple (xmin, ymin, xmax, ymax), optional
         bounds within file to search
         in lat, lon coordinates
+    remove_empty_extracted : bool
+        remove points where extracted data is nodata
 
     Yields
     ------
@@ -86,6 +91,14 @@ def select_extract_class_points(select_path, extract_path, select_class, bounds=
         jj, ii = np.where(selcond)
         extracted = xds.read(1)[selcond]
 
+        if remove_empty_extracted:
+            # remove points where extracted is nodata
+            good = extracted != xds.nodata
+            logger.info(f'Dropping {np.sum(~good)} points where extracted data is nodata.')
+            extracted = extracted[good]
+            ii = ii[good]
+            jj = jj[good]
+
         # convert pixel indices to lon, lat coordinates
         lon, lat = sds.transform * (ii, jj)
 
@@ -121,11 +134,9 @@ def interpolate_to_points(da, ixds):
         and passed-through i, j indices
     """
     ida = da.interp(coords=ixds[['lon', 'lat']], method='linear')
-    selection = ~ida.isnull().all(dim='time')
-    ida = ida.isel(point=selection)
     # preserve i,j indices
     for name in ['j', 'i']:
-        ida.coords[name] = ixds[name].isel(point=selection)
+        ida.coords[name] = ixds[name]
     return ida
 
 

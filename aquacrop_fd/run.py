@@ -80,12 +80,15 @@ def run_ds_chunk(rundir, ds, config):
         project_names.append(project_name)
         datadir = rundir / f'DATA_{project_name}'
 
+        config_with_soil = config.copy()
+        config_with_soil['soil'] = dspt['soil_class_name'].values[()]
+
         model_setup.prepare_data_folder(
             project_name=project_name,
             listdir=listdir,
             datadir=datadir,
             data_by_name=data_by_name,
-            config=config
+            config=config_with_soil
         )
     logger.info(list(listdir.glob('*.PRO')))
     timeout = (npoints * 2)
