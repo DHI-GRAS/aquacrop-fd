@@ -26,7 +26,7 @@ CLIMATE_NCOLS = {
 }
 
 
-def _copy_soil_file(soil, datadir):
+async def _copy_soil_file(soil, datadir):
     filename = soil + '.SOL'
     soils = templates.DATA['soil']
     try:
@@ -36,7 +36,7 @@ def _copy_soil_file(soil, datadir):
             f'Soil file {filename} not found. Choose from {list(soils)}.'
         )
     dst = datadir / filename
-    shutil.copy(src, dst)
+    await shutil.copy(src, dst)
     return dst
 
 
@@ -51,11 +51,11 @@ def _find_crop_file(crop):
         )
 
 
-def _copy_crop_file(crop, datadir):
+async def _copy_crop_file(crop, datadir):
     filename = crop + '.CRO'
     src = _find_crop_file(crop)
     dst = datadir / filename
-    shutil.copy(src, dst)
+    await shutil.copy(src, dst)
     return dst
 
 
