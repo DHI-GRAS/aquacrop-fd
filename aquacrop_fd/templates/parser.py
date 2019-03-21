@@ -31,8 +31,8 @@ def _join_line(value, name, linelen=None):
     return (' ' * nwhite + value_str + '  :  ' + name)
 
 
-def parse_file(path):
-    lines = path.read_text()
+async def parse_file(path):
+    lines = await path.read_text()
     properties = {}
     for line in lines.splitlines():
         value, name = _split_line(line)
@@ -86,7 +86,7 @@ def change_lines(lines, changes, raise_missing=True):
     return lines_out
 
 
-def change_file(infile, outfile, changes, raise_missing=True):
+async def change_file(infile, outfile, changes, raise_missing=True):
     """Change an AquaCrop config file
 
     Parameters
@@ -99,9 +99,10 @@ def change_file(infile, outfile, changes, raise_missing=True):
         check and raise for missing values
     """
     infile, outfile = map(Path, [infile, outfile])
-    lines = infile.read_text().splitlines()
+    lines = await infile.read_text()
+    lines = lines.splitlines()
     try:
         lines_out = change_lines(lines, changes, raise_missing=raise_missing)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {infile.name}: {err}')
-    outfile.write_text('\n'.join(lines_out))
+    await outfile.write_text('\n'.join(lines_out))
