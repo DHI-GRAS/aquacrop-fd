@@ -50,7 +50,7 @@ def write_job_file(dirpath, job, failed=False):
 def _get_jobs_getter(job_files):
     """Terrible hack to fork between jobs from files and jobs from queues"""
     global get_job
-    if job_files is not None:
+    if job_files is not None and job_files:
         # hack to bypass jobs queue communication
         _job_file_iter = iter(job_files)
 

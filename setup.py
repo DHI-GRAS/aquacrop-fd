@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='aquacrop_fd',
-    version='0.2.0',
+    version='0.2.1',
     description='AquaCrop wrapper',
     url='https://github.com/DHI-GRAS/aquacrop-fd',
     author='Jonas Solvsteen',
