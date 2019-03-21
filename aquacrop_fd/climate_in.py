@@ -28,7 +28,7 @@ def remove_empty_points(ds):
 
 def select_align_inputs(
         darrs,
-        soil_map_path, land_cover_path, soil_class, land_cover_class,
+        soil_map_path, land_cover_path, land_cover_class,
         start, end, bounds=None
 ):
     """Select and align input data
@@ -40,8 +40,8 @@ def select_align_inputs(
     soil_map_path, land_cover_path : str
         path to soil map and land cover map files
         (files must be pixel-perfectly aligned)
-    soil_class, land_cover_class : int
-        classes from each file to select
+    land_cover_class : int
+        land cover class to select
     start, end : datetime.datetime
         time range
     bounds : tuple, optional
@@ -59,11 +59,14 @@ def select_align_inputs(
 
     # find pixels
     logger.info('Finding points matching selected classes')
-    ixds = soil_landcover.find_class_points(
-        paths=[soil_map_path, land_cover_path],
-        class_values=[soil_class, land_cover_class],
+    ixds = soil_landcover.select_extract_class_points(
+        select_path=land_cover_path,
+        extract_path=soil_map_path,
+        select_class=land_cover_class,
         bounds=bounds
     )
+    logger.info(f'Found {len(ixds.point)} points')
+    logger.info(f'Index specs are {ixds.attrs}')
 
     # interpolate in space
     darrs_pt = {}
@@ -90,6 +93,9 @@ def select_align_inputs(
         da.name = name
         darrs_pt_time[name] = da
 
+    logger.info('Merging variables into one dataset')
     ds = xr.merge(darrs_pt_time.values())
+    # add soil class values as variable
+    ds = ds.assign({'soil_class': ixds['extracted']})
     ds.attrs.update(ixds.attrs)
     return remove_empty_points(ds)

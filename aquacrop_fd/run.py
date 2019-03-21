@@ -63,7 +63,7 @@ def run_ds_chunk(rundir, ds, config):
 
     logger.info(f'Setting up processing of {npoints} points')
     project_names = []
-    for pt in ds['point'].values:
+    for k, pt in enumerate(ds['point'].values):
         dspt = ds.sel(point=pt)
         data_by_name = {
             'Climate.PLU': [dspt['PLU'].values],
@@ -72,16 +72,19 @@ def run_ds_chunk(rundir, ds, config):
             'time': dspt.time.to_index().to_pydatetime()
         }
 
-        project_name = f'{pt:03d}'
+        project_name = f'{k:03d}'
         project_names.append(project_name)
         datadir = rundir / f'DATA_{project_name}'
+
+        config_with_soil = config.copy()
+        config_with_soil['soil'] = dspt['soil_class_name'].values[()]
 
         model_setup.prepare_data_folder(
             project_name=project_name,
             listdir=listdir,
             datadir=datadir,
             data_by_name=data_by_name,
-            config=config
+            config=config_with_soil
         )
     logger.info(list(listdir.glob('*.PRO')))
     timeout = (npoints * 2)
@@ -98,7 +101,7 @@ def run_ds_chunk(rundir, ds, config):
 
 
 def _chunk_worker(ds, config):
-    rundir = Path(tempfile.mkdtemp(prefix='acfd_'))
+    rundir = Path(tempfile.mkdtemp(prefix='acfd-'))
     try:
         dsout = run_ds_chunk(rundir, ds, config=config)
         # only clean up when run was successful
@@ -113,27 +116,35 @@ def _chunk_worker(ds, config):
     return dsout
 
 
-def run_ds(ds, config, nproc=None, chunksize=100):
+def run_ds(ds, config, chunksize=20, nproc=None):
     npoints = len(ds.point)
-    nchunks = int(npoints / chunksize + 0.5)
+    nchunks = int(np.ceil(npoints / chunksize))
     jobs = []
     for k in range(nchunks):
-        ptslice = slice(k * chunksize, (k+1) * chunksize)
+        ptslice = slice(k * chunksize, (k + 1) * chunksize)
         dschunk = ds.isel(point=ptslice)
         if len(dschunk.point) == 0:
             # just in case
             continue
         jobs.append(dschunk)
 
+    if not jobs:
+        raise ValueError('No points to process.')
+
     _worker = functools.partial(_chunk_worker, config=config)
 
     if nproc is None:
         nproc = os.cpu_count()
-    max_workers = min(nchunks, nproc)
-
+    max_workers = min(len(jobs), nproc)
+    logger.info(
+        f'Processing {len(jobs)} jobs of {chunksize} points on {max_workers} workers'
+    )
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         all_dsout = executor.map(_worker, jobs)
 
+    logger.info('Merging outputs')
     dsout = xr.merge(all_dsout)
+    for name in ['j', 'i']:
+        dsout.coords[name] = ds[name]
     dsout.attrs.update(ds.attrs)
     return dsout
