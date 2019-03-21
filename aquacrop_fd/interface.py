@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import asyncio
 
 import shapely.geometry
 import xarray as xr
@@ -77,7 +78,7 @@ def interface(
 
         data_aligned = climate_in.select_align_inputs(darrs=darrs, **selkw)
 
-        dsout = run.run_ds(data_aligned, config=config, nproc=nproc)
+        dsout = asyncio.run(run.run_ds(data_aligned, config=config, nproc=nproc))
 
     logger.info('Map points dataset to 2D raster')
     dsout_latlon = soil_landcover.points_to_2d(dsout)
