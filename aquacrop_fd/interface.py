@@ -77,9 +77,8 @@ def interface(
 
         data_aligned = climate_in.select_align_inputs(darrs=darrs, **selkw)
 
-        dsout = run.run_ds(data_aligned.isel(point=slice(None, 500)), config=config)
+        dsout = run.run_ds(data_aligned, config=config, nproc=nproc)
 
-    dsout = xr.merge([dsout, data_aligned['j', 'i']])
-    dsout.attrs.update(data_aligned.attrs)
-    dsout_latlon = soil_landcover.to_latlon(dsout)
+    logger.info('Map points dataset to 2D raster')
+    dsout_latlon = soil_landcover.points_to_2d(dsout)
     return dsout_latlon

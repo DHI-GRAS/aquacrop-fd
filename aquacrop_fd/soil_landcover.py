@@ -3,6 +3,7 @@ import contextlib
 import rasterio.crs
 import rasterio.vrt
 import rasterio.windows
+import affine
 import numpy as np
 import xarray as xr
 
@@ -133,13 +134,42 @@ def interpolate_to_points(da, ixds):
     selection = ~ida.isnull().all(dim='time')
     ida = ida.isel(point=selection)
     for name in ['j', 'i']:
-        ida[name] = ixds[name].isel(point=selection)
+        ida.coords[name] = ixds[name].isel(point=selection)
     return ida
 
 
-def map_points_to_raster(ds):
-    shape = tuple(ds.attrs[k] for k in ['height', 'width'])
+def lonlat_from_transform(transform, width, height):
+    """Make lon, lat arrays from transform and shape"""
+    lon, _ = transform * (np.arange(width) + 0.5, np.full(shape=width, fill_value=0.5))
+    _, lat = transform * (np.full(shape=height, fill_value=0.5), np.arange(height, 0, -1) - 0.5)
+    return lon, lat
+
+
+def points_to_2d(ds):
+    """Map points dataset back to 2D coordinates
+
+    Parameters
+    ----------
+    ds : Dataset
+        dataset with points
+
+    Returns
+    -------
+    ds
+        dataset with lon, lat
+    """
+    shape = height, width = (ds.attrs['height'], ds.attrs['width'])
+    transform = affine.Affine(*ds.attrs['transform'][:6])
+    lon, lat = lonlat_from_transform(transform, width=width, height=height)
+    coords = dict(lon=lon, lat=lat)
+
+    darrs = {}
     for name, da in ds.data_vars.items():
         data = np.full(shape=shape, fill_value=np.nan, dtype='float')
         data[ds['j'], ds['i']] = da.values
-        pass
+        darrs[name] = xr.DataArray(data, dims=('lat', 'lon'), name=name)
+
+    dsout = xr.Dataset(darrs, coords=coords)
+    dsout['time'] = ds['time']
+
+    return dsout

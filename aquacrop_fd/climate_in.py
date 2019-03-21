@@ -65,6 +65,7 @@ def select_align_inputs(
         bounds=bounds
     )
     logger.info(f'Found {len(ixds.point)} points')
+    logger.info(f'Index specs are {ixds.attrs}')
 
     # interpolate in space
     darrs_pt = {}
@@ -91,6 +92,7 @@ def select_align_inputs(
         da.name = name
         darrs_pt_time[name] = da
 
+    logger.info('Merging variables into one dataset')
     ds = xr.merge(darrs_pt_time.values())
     ds.attrs.update(ixds.attrs)
     return remove_empty_points(ds)

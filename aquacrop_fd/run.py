@@ -1,4 +1,5 @@
 import os
+import itertools
 from pathlib import Path
 import shutil
 import functools
@@ -14,6 +15,9 @@ from aquacrop_fd import execution
 from aquacrop_fd import data_out
 
 logger = logging.getLogger(__name__)
+
+MAX_WORKERS = 5
+CHUNKSIZES = [5, 20, 35, 50, 65, 75]
 
 
 def run_single(project_name, rundir, datadir, data_by_name, config):
@@ -63,7 +67,7 @@ def run_ds_chunk(rundir, ds, config):
 
     logger.info(f'Setting up processing of {npoints} points')
     project_names = []
-    for pt in ds['point'].values:
+    for k, pt in enumerate(ds['point'].values):
         dspt = ds.sel(point=pt)
         data_by_name = {
             'Climate.PLU': [dspt['PLU'].values],
@@ -72,7 +76,7 @@ def run_ds_chunk(rundir, ds, config):
             'time': dspt.time.to_index().to_pydatetime()
         }
 
-        project_name = f'{pt:03d}'
+        project_name = f'{k:03d}'
         project_names.append(project_name)
         datadir = rundir / f'DATA_{project_name}'
 
@@ -98,7 +102,7 @@ def run_ds_chunk(rundir, ds, config):
 
 
 def _chunk_worker(ds, config):
-    rundir = Path(tempfile.mkdtemp(prefix='acfd_'))
+    rundir = Path(tempfile.mkdtemp(prefix='acfd-'))
     try:
         dsout = run_ds_chunk(rundir, ds, config=config)
         # only clean up when run was successful
@@ -113,27 +117,35 @@ def _chunk_worker(ds, config):
     return dsout
 
 
-def run_ds(ds, config, nproc=None, chunksize=100):
+def run_ds(ds, config, nproc=None):
     npoints = len(ds.point)
-    nchunks = int(npoints / chunksize + 0.5)
+    chunksizes = itertools.cycle(CHUNKSIZES)
+    ntaken = 0
     jobs = []
-    for k in range(nchunks):
-        ptslice = slice(k * chunksize, (k+1) * chunksize)
+    while ntaken < npoints:
+        chunksize = next(chunksizes)
+        ptslice = slice(ntaken, ntaken + chunksize)
         dschunk = ds.isel(point=ptslice)
         if len(dschunk.point) == 0:
             # just in case
             continue
         jobs.append(dschunk)
+        ntaken += chunksize
 
     _worker = functools.partial(_chunk_worker, config=config)
 
     if nproc is None:
         nproc = os.cpu_count()
-    max_workers = min(nchunks, nproc)
-    logger.info(f'Processing {nchunks} chunks on {max_workers} workers')
+    max_workers = min(len(jobs), nproc, MAX_WORKERS)
+    logger.info(
+        f'Processing {len(jobs)} jobs on {max_workers} workers'
+    )
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         all_dsout = executor.map(_worker, jobs)
 
+    logger.info('Merging outputs')
     dsout = xr.merge(all_dsout)
+    for name in ['j', 'i']:
+        dsout.coords[name] = ds[name]
     dsout.attrs.update(ds.attrs)
     return dsout
