@@ -10,6 +10,7 @@ setup(
     entry_points="""
     [console_scripts]
     aquacrop-run=aquacrop_fd.scripts:run_cli
+    aquacrop-queues=aquacrop_fd.scripts:run_queues
     """,
     install_requires=[
         'numpy',

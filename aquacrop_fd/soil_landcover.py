@@ -167,7 +167,7 @@ def points_to_2d(ds):
 
     darrs = {}
     for name, da in ds.data_vars.items():
-        data = np.full(shape=shape, fill_value=np.nan, dtype='float')
+        data = np.ma.full(shape=shape, fill_value=np.ma.masked, dtype=da.dtype)
         data[ds['j'], ds['i']] = da.values
         darrs[name] = xr.DataArray(data, dims=('lat', 'lon'), name=name)
 

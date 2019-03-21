@@ -82,7 +82,7 @@ class OutdirMakedirs(click.ParamType):
     help='Path to GeoJSON file with bounds geometry'
 )
 def run_cli(**kwargs):
-    interface(**kwargs)
+    interface.interface(**kwargs)
 
 
 @click.command()
@@ -123,4 +123,5 @@ def run_cli(**kwargs):
     '--api-url', required=True, help='API URL'
 )
 def run_queues(**kwargs):
-    pass
+    from aquqcrop_fd import queue_interface
+    queue_interface.work_queue(**kwargs)
