@@ -19,25 +19,17 @@ def _datasets_are_congruent(datasets):
     return (len(profiles) == 1), profiles
 
 
-def _get_class_indices(datasets, class_values):
-    """Get the indices of points where dataset values match corresponding class values"""
-    cond = True
-    for src, class_value in zip(datasets, class_values):
-        data = src.read(indexes=1)
-        cond &= (data == class_value)
-    jj, ii = np.where(cond)
-    return jj, ii
-
-
-def find_class_points(paths, class_values, bounds=None):
+def select_extract_class_points(select_path, extract_path, select_class, bounds=None):
     """Find points corresponding to class
 
     Parameters
     ----------
-    paths : list of str or Path
-        paths to source datasets
-    class_values : list of int
-        value of class to find for each dataset (path)
+    select_path : str or Path
+        path to raster with classes to select
+    extract_path : str or Path
+        path to raster with data to extract at selected points
+    select_class : int
+        value for class to select
     bounds : tuple (xmin, ymin, xmax, ymax), optional
         bounds within file to search
         in lat, lon coordinates
@@ -45,16 +37,16 @@ def find_class_points(paths, class_values, bounds=None):
     Yields
     ------
     xr.Dataset
-        coordinates of points in current block
-        of datasets that are equal to class_values
-        together with indices in original image
-        (for raster reconstruction)
+        coordinates of points in selection dataset
+        that are equal to select_class
+        together with extracted values from extract dataset
+        and indices in original image (for raster reconstruction)
     """
-    if len(paths) != len(class_values):
-        raise ValueError('There must be one class value for each dataset.')
-
     with contextlib.ExitStack() as es:
-        datasets = [es.enter_context(rasterio.open(path)) for path in paths]
+        datasets = [
+            es.enter_context(rasterio.open(path))
+            for path in [select_path, extract_path]
+        ]
 
         congruent, profiles = _datasets_are_congruent(datasets)
         if not congruent:
@@ -82,29 +74,31 @@ def find_class_points(paths, class_values, bounds=None):
             # pass
             vrts = datasets
 
-        # take first VRT as model
-        vrt = vrts[0]
-        jj, ii = _get_class_indices(vrts, class_values=class_values)
-        assert np.all(jj < vrt.height)
-        assert np.all(ii < vrt.width)
+        sds, xds = vrts
 
-        if len(jj) == 0:
+        # select class points
+        seldata = sds.read(1)
+        selcond = seldata == select_class
+        if not np.any(selcond):
             raise ValueError(
-                f'No points found intersecting bounding box and class values {class_values}.'
+                f'No points found for class value {select_class} (within bounding box).'
             )
+        jj, ii = np.where(selcond)
+        extracted = xds.read(1)[selcond]
 
         # convert pixel indices to lon, lat coordinates
-        lon, lat = vrt.transform * (ii, jj)
+        lon, lat = sds.transform * (ii, jj)
 
         # store all in Dataset
+        variables = {'lon': lon, 'lat': lat, 'i': ii, 'j': jj, 'extracted': extracted}
         data_vars = {
             name: xr.DataArray(data, dims='point', name=name)
-            for name, data in {'lon': lon, 'lat': lat, 'i': ii, 'j': jj}.items()
+            for name, data in variables.items()
         }
         ds = xr.Dataset(data_vars, coords={'point': np.arange(len(lon))})
-        ds.attrs.update({name: vrt.profile[name] for name in ['width', 'height']})
+        ds.attrs.update({name: sds.profile[name] for name in ['width', 'height']})
         # properly serialize transform
-        ds.attrs['transform'] = list(vrt.profile['transform'])
+        ds.attrs['transform'] = list(sds.profile['transform'])
         return ds
 
 
@@ -129,6 +123,7 @@ def interpolate_to_points(da, ixds):
     ida = da.interp(coords=ixds[['lon', 'lat']], method='linear')
     selection = ~ida.isnull().all(dim='time')
     ida = ida.isel(point=selection)
+    # preserve i,j indices
     for name in ['j', 'i']:
         ida.coords[name] = ixds[name].isel(point=selection)
     return ida
