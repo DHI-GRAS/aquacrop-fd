@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 if sys.platform == 'win32':
     loop = asyncio.ProactorEventLoop()
-    asyncio.set_event_loop()
+    asyncio.set_event_loop(loop)
 
 
 SOIL_CLASS_MAP = {
