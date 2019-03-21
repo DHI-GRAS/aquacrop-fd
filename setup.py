@@ -18,7 +18,7 @@ setup(
         'pandas',
         'affine',
         'click',
-        'dateutil'
+        'python-dateutil'
     ],
     extras_require={
         'test': [
