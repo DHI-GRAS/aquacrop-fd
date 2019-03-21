@@ -162,4 +162,7 @@ def run_cli(log_dir, **kwargs):
 def run_queues(log_dir, **kwargs):
     from aquacrop_fd import queue_interface
     setup_logging(log_dir=log_dir)
+    job_file_dir = Path(log_dir) / 'job-files'
+    job_file_dir.mkdir(parents=True, exist_ok=True)
+    kwargs['job_file_dir'] = job_file_dir
     queue_interface.work_queue(**kwargs)

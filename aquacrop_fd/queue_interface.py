@@ -39,8 +39,9 @@ def put_done(api_url, guid, error):
     r.raise_for_status()
 
 
-def write_jobs_file(dirpath, job):
-    outfile = Path(dirpath) / '{guid}.json'.format(**job)
+def write_job_file(dirpath, job, failed=False):
+    failedstr = '-failed' if failed else ''
+    outfile = Path(dirpath) / '{guid}{failedstr}.json'.format(failedstr=failedstr, **job)
     logger.info(f'Writing jobs file to {outfile}')
     schema = queue_schemas.JobSchema()
     outfile.write_text(schema.dumps(job, indent=2))
@@ -51,11 +52,11 @@ def _get_jobs_getter(job_files):
     global get_job
     if job_files is not None:
         # hack to bypass jobs queue communication
-        _jobs_file_iter = iter(job_files)
+        _job_file_iter = iter(job_files)
 
         def read_jobs(*args, **kwargs):
             try:
-                path = Path(next(_jobs_file_iter))
+                path = Path(next(_job_file_iter))
             except StopIteration:
                 return None
             schema = queue_schemas.JobSchema()
@@ -70,7 +71,7 @@ def work_queue(
         api_url,
         plu_path, eto_path, tmp_min_path, tmp_max_path,
         soil_map_path, land_cover_path,
-        outdir, failed_jobs_dir=None,
+        outdir, job_file_dir=None,
         job_files=None
 ):
     if not api_url.endswith('/'):
@@ -84,6 +85,9 @@ def work_queue(
         if job is None:
             logger.info('No more jobs to process.')
             break
+
+        if job_file_dir is not None:
+            write_job_file(job_file_dir, job)
 
         guid = job['guid']
 
@@ -106,8 +110,8 @@ def work_queue(
         except Exception as error:
             logger.exception(f'Job {guid} failed!')
             error_message = f'Processing failed. ({str(error)})'
-            if failed_jobs_dir is not None:
-                write_jobs_file(failed_jobs_dir, job)
+            if job_file_dir is not None:
+                write_job_file(job_file_dir, job, failed=True)
             raise
         finally:
             logger.info('Putting DONE message')
