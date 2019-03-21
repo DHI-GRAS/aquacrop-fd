@@ -17,8 +17,12 @@ setup(
         'rasterio',
         'pandas',
         'affine',
+        'shapely',
         'click',
-        'python-dateutil'
+        'python-dateutil',
+        'netcdf4',
+        'dask',  # for mfdataset
+        'scipy'  # for bilinear interpolation
     ],
     extras_require={
         'test': [

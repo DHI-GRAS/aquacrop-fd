@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 
+import aiofiles
+
 
 def _split_line(line):
     ww = re.split(':', line, maxsplit=1)
@@ -32,7 +34,10 @@ def _join_line(value, name, linelen=None):
 
 
 async def parse_file(path):
-    lines = await path.read_text()
+
+    async with aiofiles.open(str(path)) as f:
+        lines = await f.read()
+
     properties = {}
     for line in lines.splitlines():
         value, name = _split_line(line)
@@ -99,10 +104,15 @@ async def change_file(infile, outfile, changes, raise_missing=True):
         check and raise for missing values
     """
     infile, outfile = map(Path, [infile, outfile])
-    lines = await infile.read_text()
+
+    async with aiofiles.open(str(infile)) as f:
+        lines = await f.read()
+
     lines = lines.splitlines()
     try:
         lines_out = change_lines(lines, changes, raise_missing=raise_missing)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {infile.name}: {err}')
-    await outfile.write_text('\n'.join(lines_out))
+
+    async with aiofiles.open(str(outfile), mode='w') as f:
+        await f.write('\n'.join(lines_out))

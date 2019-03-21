@@ -1,4 +1,3 @@
-import itertools
 from pathlib import Path
 import shutil
 import tempfile
@@ -13,9 +12,6 @@ from aquacrop_fd import execution
 from aquacrop_fd import data_out
 
 logger = logging.getLogger(__name__)
-
-MAX_WORKERS = 5
-CHUNKSIZES = [170]
 
 
 def run_single(project_name, rundir, datadir, data_by_name, config):
@@ -115,25 +111,22 @@ async def _chunk_worker(ds, config):
     return dsout
 
 
-async def run_ds(ds, config, nproc=None):
+async def run_ds(ds, config, nproc=None, chunksize=10):
     npoints = len(ds.point)
-    chunksizes = itertools.cycle(CHUNKSIZES)
-    ntaken = 0
+    nchunks = int(npoints / chunksize + 0.5)
     jobs = []
-    while ntaken < npoints:
-        chunksize = next(chunksizes)
-        ptslice = slice(ntaken, ntaken + chunksize)
+    for k in range(nchunks):
+        ptslice = slice(k * chunksize, (k + 1) * chunksize)
         dschunk = ds.isel(point=ptslice)
         if len(dschunk.point) == 0:
             # just in case
             continue
-        jobs.append(_chunk_worker(ds, config))
-        ntaken += chunksize
+        jobs.append(_chunk_worker(dschunk, config))
 
     logger.info(
         f'Processing {len(jobs)} jobs asynchronously'
     )
-    all_dsout = await asyncio.gather(jobs, loop=asyncio.get_running_loop())
+    all_dsout = await asyncio.gather(*jobs, loop=asyncio.get_running_loop())
 
     logger.info('Merging outputs')
     dsout = xr.merge(all_dsout)

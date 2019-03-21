@@ -3,6 +3,8 @@ import datetime
 import logging
 import asyncio
 
+import aiofiles
+
 from aquacrop_fd import utils
 from aquacrop_fd import templates
 from aquacrop_fd.templates import parser
@@ -26,7 +28,7 @@ CLIMATE_NCOLS = {
 }
 
 
-async def _copy_soil_file(soil, datadir):
+def _copy_soil_file(soil, datadir):
     filename = soil + '.SOL'
     soils = templates.DATA['soil']
     try:
@@ -36,7 +38,7 @@ async def _copy_soil_file(soil, datadir):
             f'Soil file {filename} not found. Choose from {list(soils)}.'
         )
     dst = datadir / filename
-    await shutil.copy(src, dst)
+    shutil.copy(src, dst)
     return dst
 
 
@@ -51,11 +53,11 @@ def _find_crop_file(crop):
         )
 
 
-async def _copy_crop_file(crop, datadir):
+def _copy_crop_file(crop, datadir):
     filename = crop + '.CRO'
     src = _find_crop_file(crop)
     dst = datadir / filename
-    await shutil.copy(src, dst)
+    shutil.copy(src, dst)
     return dst
 
 
@@ -101,20 +103,24 @@ async def write_climate_file(filename, datadir, arrs, time, changes=None):
             f'Climate file {filename} not found. Choose from {list(climate_templates)}'
         ) from err
     dst = datadir / filename
-    lines = await src.read_text()
+    async with aiofiles.open(str(src)) as f:
+        lines = await f.read()
+
     lines = lines.splitlines()
     try:
         lines = climate_data.write_climate_data(lines, arrs, time=time, extra_changes=changes)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {filename}: {err!s}') from err
-    await dst.write_text('\n'.join(lines))
+
+    async with aiofiles.open(str(dst), mode='w') as f:
+        await f.write('\n'.join(lines))
     return dst
 
 
-async def copy_climate_file(datadir, filename):
+def copy_climate_file(datadir, filename):
     src = templates.DATA['climate'][filename]
     dst = datadir / src.name
-    await shutil.copy(src, dst)
+    shutil.copy(src, dst)
     return dst
 
 
@@ -168,8 +174,8 @@ async def prepare_data_folder(project_name, listdir, datadir, data_by_name, conf
         raise ValueError(f'Config is missing information: {missing_config}')
 
     # write soil and crop files
-    paths['soil'] = await _copy_soil_file(config['soil'], datadir)
-    paths['crop'] = await _copy_crop_file(config['crop'], datadir)
+    paths['soil'] = _copy_soil_file(config['soil'], datadir)
+    paths['crop'] = _copy_crop_file(config['crop'], datadir)
 
     # calculate date range for crop type
     crop_cycle_length = await _get_crop_cycle_length(paths['crop'])
@@ -200,7 +206,7 @@ async def prepare_data_folder(project_name, listdir, datadir, data_by_name, conf
 
     # write CO2 file
     for filename in STATIC_CLIMATE_FILES:
-        paths[filename] = await copy_climate_file(datadir, filename)
+        paths[filename] = copy_climate_file(datadir, filename)
 
     # write project file
     project_file = listdir / f'{project_name}.PRO'

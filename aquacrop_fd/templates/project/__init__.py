@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 import logging
 
+import aiofiles
+
 logger = logging.getLogger(__name__)
 
 TEMPLATEFILE = (Path(__file__).parent / 'Template.PRO').resolve()
@@ -32,7 +34,7 @@ class FixedPath:
         self.parent = str(path.parent) + os.sep
 
 
-def write_project_file(outfile, paths, config, missing_to_blank=False):
+async def write_project_file(outfile, paths, config, missing_to_blank=False):
     """Format AquaCrop PRO file
 
     Parameters
@@ -67,7 +69,11 @@ def write_project_file(outfile, paths, config, missing_to_blank=False):
 
     fields = dict(paths=paths, **config)
     logger.debug(fields)
-    template = TEMPLATEFILE.read_text()
+
+    async with aiofiles.open(str(TEMPLATEFILE)) as f:
+        template = await f.read()
 
     template_formatted = template.format(**fields)
-    outfile.write_text(template_formatted)
+
+    async with aiofiles.open(str(outfile), mode='w') as f:
+        template = await f.write(template_formatted)
