@@ -1,11 +1,9 @@
-import os
 import itertools
 from pathlib import Path
 import shutil
-import functools
 import tempfile
 import logging
-import concurrent.futures
+import asyncio
 
 import xarray as xr
 import numpy as np
@@ -52,7 +50,7 @@ def _merge_data_dicts(dds, pointcoord):
     return ds
 
 
-def run_ds_chunk(rundir, ds, config):
+async def run_ds_chunk(rundir, ds, config):
     rundir = Path(rundir)
     npoints = len(ds.point)
     if npoints > 1000:
@@ -80,7 +78,7 @@ def run_ds_chunk(rundir, ds, config):
         project_names.append(project_name)
         datadir = rundir / f'DATA_{project_name}'
 
-        model_setup.prepare_data_folder(
+        await model_setup.prepare_data_folder(
             project_name=project_name,
             listdir=listdir,
             datadir=datadir,
@@ -89,7 +87,7 @@ def run_ds_chunk(rundir, ds, config):
         )
     logger.info(list(listdir.glob('*.PRO')))
     timeout = (npoints * 2)
-    execution.run(executable, timeout=timeout)
+    await execution.run(executable, timeout=timeout)
 
     dds = []
     for project_name in project_names:
@@ -101,10 +99,10 @@ def run_ds_chunk(rundir, ds, config):
     return ds
 
 
-def _chunk_worker(ds, config):
+async def _chunk_worker(ds, config):
     rundir = Path(tempfile.mkdtemp(prefix='acfd-'))
     try:
-        dsout = run_ds_chunk(rundir, ds, config=config)
+        dsout = await run_ds_chunk(rundir, ds, config=config)
         # only clean up when run was successful
         try:
             shutil.rmtree(rundir)
@@ -117,7 +115,7 @@ def _chunk_worker(ds, config):
     return dsout
 
 
-def run_ds(ds, config, nproc=None):
+async def run_ds(ds, config, nproc=None):
     npoints = len(ds.point)
     chunksizes = itertools.cycle(CHUNKSIZES)
     ntaken = 0
@@ -129,19 +127,13 @@ def run_ds(ds, config, nproc=None):
         if len(dschunk.point) == 0:
             # just in case
             continue
-        jobs.append(dschunk)
+        jobs.append(_chunk_worker(ds, config))
         ntaken += chunksize
 
-    _worker = functools.partial(_chunk_worker, config=config)
-
-    if nproc is None:
-        nproc = os.cpu_count()
-    max_workers = min(len(jobs), nproc, MAX_WORKERS)
     logger.info(
-        f'Processing {len(jobs)} jobs on {max_workers} workers'
+        f'Processing {len(jobs)} jobs asynchronously'
     )
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        all_dsout = executor.map(_worker, jobs)
+    all_dsout = await asyncio.gather(jobs, loop=asyncio.get_running_loop())
 
     logger.info('Merging outputs')
     dsout = xr.merge(all_dsout)

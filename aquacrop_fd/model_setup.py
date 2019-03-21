@@ -1,6 +1,7 @@
 import shutil
 import datetime
 import logging
+import asyncio
 
 from aquacrop_fd import utils
 from aquacrop_fd import templates
@@ -58,8 +59,8 @@ def _copy_crop_file(crop, datadir):
     return dst
 
 
-def _get_crop_cycle_length(crop_file):
-    data = parser.parse_file(crop_file)
+async def _get_crop_cycle_length(crop_file):
+    data = await parser.parse_file(crop_file)
     try:
         daystr = data["Calendar Days: from sowing to maturity (length of crop cycle)"]
     except KeyError:
@@ -67,7 +68,7 @@ def _get_crop_cycle_length(crop_file):
     return datetime.timedelta(days=int(daystr))
 
 
-def write_climate_file(filename, datadir, arrs, time, changes=None):
+async def write_climate_file(filename, datadir, arrs, time, changes=None):
     """Write climate file
 
     Parameters
@@ -100,39 +101,40 @@ def write_climate_file(filename, datadir, arrs, time, changes=None):
             f'Climate file {filename} not found. Choose from {list(climate_templates)}'
         ) from err
     dst = datadir / filename
-    lines = src.read_text().splitlines()
+    lines = await src.read_text()
+    lines = lines.splitlines()
     try:
         lines = climate_data.write_climate_data(lines, arrs, time=time, extra_changes=changes)
     except RuntimeError as err:
         raise RuntimeError(f'Error changing {filename}: {err!s}') from err
-    dst.write_text('\n'.join(lines))
+    await dst.write_text('\n'.join(lines))
     return dst
 
 
-def copy_climate_file(datadir, filename):
+async def copy_climate_file(datadir, filename):
     src = templates.DATA['climate'][filename]
     dst = datadir / src.name
-    shutil.copy(src, dst)
+    await shutil.copy(src, dst)
     return dst
 
 
-def write_net_irrigation_file(datadir, fraction):
+async def write_net_irrigation_file(datadir, fraction):
     infile = templates.DATA['climate']['Irrigation.IRR']
     outfile = datadir / infile.name
     changes = {
         'Allowable depletion of RAW (%)': fraction
     }
-    parser.change_file(infile, outfile, changes)
+    await parser.change_file(infile, outfile, changes)
     return outfile
 
 
 def get_crop_cycle_length(crop):
     """Get crop cycle length for named crop"""
     path = _find_crop_file(crop)
-    return _get_crop_cycle_length(path)
+    return asyncio.run(_get_crop_cycle_length(path))
 
 
-def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
+async def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
     """Write all data, aux, and config files into project directory
 
     Parameters
@@ -166,11 +168,11 @@ def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
         raise ValueError(f'Config is missing information: {missing_config}')
 
     # write soil and crop files
-    paths['soil'] = _copy_soil_file(config['soil'], datadir)
-    paths['crop'] = _copy_crop_file(config['crop'], datadir)
+    paths['soil'] = await _copy_soil_file(config['soil'], datadir)
+    paths['crop'] = await _copy_crop_file(config['crop'], datadir)
 
     # calculate date range for crop type
-    crop_cycle_length = _get_crop_cycle_length(paths['crop'])
+    crop_cycle_length = await _get_crop_cycle_length(paths['crop'])
     start_date = config['planting_date']
     end_date = start_date + crop_cycle_length
     project_config = {
@@ -183,13 +185,13 @@ def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
 
     # write irrigation file
     if config.get('irrigated', False):
-        irrpath = write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
+        irrpath = await write_net_irrigation_file(datadir, fraction=config.get('fraction', 100))
         paths[irrpath.name] = irrpath
 
     # write climate files
     for filename in REQUIRED_CLIMATE_FILES:
         logger.debug(f'Writing data for {filename}')
-        paths[filename] = write_climate_file(
+        paths[filename] = await write_climate_file(
             filename=filename,
             datadir=datadir,
             arrs=data_by_name[filename],
@@ -198,11 +200,11 @@ def prepare_data_folder(project_name, listdir, datadir, data_by_name, config):
 
     # write CO2 file
     for filename in STATIC_CLIMATE_FILES:
-        paths[filename] = copy_climate_file(datadir, filename)
+        paths[filename] = await copy_climate_file(datadir, filename)
 
     # write project file
     project_file = listdir / f'{project_name}.PRO'
-    project.write_project_file(
+    await project.write_project_file(
         outfile=project_file,
         paths=paths,
         config=project_config

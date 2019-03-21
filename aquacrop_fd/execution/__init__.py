@@ -1,6 +1,7 @@
 import zipfile
-import subprocess
+import asyncio
 from pathlib import Path
+from subprocess import CalledProcessError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,13 +31,16 @@ def deploy(rundir):
     return exe, listdir
 
 
-def run(executable, project_file=None, timeout=5):
+async def run(executable, project_file=None, timeout=5):
     if project_file is None:
         cmd = str(executable)
     else:
         cmd = ' '.join(map(str, [executable, project_file]))
     logger.debug(f'Running {cmd}')
-    return subprocess.run(cmd, check=True, timeout=timeout)
+    proc = await asyncio.create_subprocess_shell(cmd)
+    await asyncio.wait_for(proc.wait(), timeout=timeout)
+    if proc.returncode != 0:
+        raise CalledProcessError(proc.returncode, cmd, None)
 
 
 def get_output_files(rundir, project_name):
