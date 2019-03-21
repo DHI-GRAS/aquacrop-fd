@@ -39,11 +39,14 @@ def data_file_10d(data_array_10d, tmp_path_factory):
 
 @pytest.fixture
 def data_dict_10d(data_array_10d):
-    da = data_array_10d
-    return dict(
-        arrs=[da.isel(lon=5, lat=5).values],
-        times=da.time.to_index().to_pydatetime()
-    )
+    from aquacrop_fd import model_setup
+    data = {
+        name: [data_array_10d.isel(lon=5, lat=5).values.copy()]
+        for name in model_setup.REQUIRED_CLIMATE_FILES
+    }
+    data['Climate.TMP'] = data['Climate.TMP'] * 2
+    data['time'] = data_array_10d.time.to_index().to_pydatetime()
+    return data
 
 
 @pytest.fixture
@@ -63,7 +66,8 @@ def climate_file(tmp_path_factory, data_dict_10d):
     model_setup.write_climate_file(
         filename=dst.name,
         datadir=dst.parent,
-        **data_dict_10d
+        arrs=data_dict_10d['Climate.PLU'],
+        time=data_dict_10d['time']
     )
     return dst
 
@@ -76,6 +80,7 @@ def soil_map_file(tmp_path_factory):
     path = tmp_path_factory.mktemp('aux') / 'soil-map.tif'
     data = np.random.randint(0, 11 + 1, size=(1, 200, 300)).astype('uint8')
     data[data == 11] = 255
+    data[0, 0] = 3
     profile = {
         'width': data.shape[-1],
         'height': data.shape[-2],
