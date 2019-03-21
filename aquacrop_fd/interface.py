@@ -14,11 +14,6 @@ from aquacrop_fd import soil_landcover
 logger = logging.getLogger(__name__)
 
 
-if sys.platform == 'win32':
-    loop = asyncio.ProactorEventLoop()
-    asyncio.set_event_loop(loop)
-
-
 SOIL_CLASS_MAP = {
     'Clay': 1,
     'ClayLoam': 2,
@@ -85,7 +80,11 @@ def interface(
 
         data_aligned = climate_in.select_align_inputs(darrs=darrs, **selkw)
 
-        loop = asyncio.get_event_loop()
+        if sys.platform == 'win32':
+            logger.info('Windows sucks')
+            loop = asyncio.ProactorEventLoop()
+        else:
+            loop = asyncio.get_event_loop()
         dsout = loop.run_until_complete(run.run_ds(data_aligned, config=config, nproc=nproc))
 
     logger.info('Map points dataset to 2D raster')
