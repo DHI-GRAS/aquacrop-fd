@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import asyncio
+import sys
 
 import shapely.geometry
 import xarray as xr
@@ -11,6 +12,12 @@ from aquacrop_fd import model_setup
 from aquacrop_fd import soil_landcover
 
 logger = logging.getLogger(__name__)
+
+
+if sys.platform == 'win32':
+    loop = asyncio.ProactorEventLoop()
+    asyncio.set_event_loop()
+
 
 SOIL_CLASS_MAP = {
     'Clay': 1,
@@ -78,7 +85,8 @@ def interface(
 
         data_aligned = climate_in.select_align_inputs(darrs=darrs, **selkw)
 
-        dsout = asyncio.run(run.run_ds(data_aligned, config=config, nproc=nproc))
+        loop = asyncio.get_event_loop()
+        dsout = loop.run_until_complete(run.run_ds(data_aligned, config=config, nproc=nproc))
 
     logger.info('Map points dataset to 2D raster')
     dsout_latlon = soil_landcover.points_to_2d(dsout)
