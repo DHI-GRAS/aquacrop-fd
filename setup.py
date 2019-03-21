@@ -7,11 +7,18 @@ setup(
     url='https://github.com/DHI-GRAS/aquacrop-fd',
     author='Jonas Solvsteen',
     author_email='josl@dhigroup.com',
+    entry_points="""
+    [console_scripts]
+    aquacrop-run=aquacrop_fd.scripts:run_cli
+    """,
     install_requires=[
         'numpy',
         'xarray',
         'rasterio',
-        'affine'
+        'pandas',
+        'affine',
+        'click',
+        'dateutil'
     ],
     extras_require={
         'test': [

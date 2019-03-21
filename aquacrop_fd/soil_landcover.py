@@ -1,4 +1,5 @@
 import contextlib
+import logging
 
 import rasterio.crs
 import rasterio.vrt
@@ -7,6 +8,7 @@ import affine
 import numpy as np
 import xarray as xr
 
+logger = logging.getLogger(__name__)
 
 CRS_WGS = rasterio.crs.CRS({'init': 'epsg:4326'})
 
@@ -66,15 +68,9 @@ def find_class_points(paths, class_values, bounds=None):
             raise ValueError(f'Expecting datasets in WGS84. Got {src.crs}.')
 
         if bounds is not None:
+            logger.debug(f'Clipping data to bounds {bounds}')
             # limit dataset to bounds
             window = src.window(*bounds)
-            if src.block_shapes:
-                window = rasterio.windows.round_window_to_full_blocks(
-                    window,
-                    block_shapes=src.block_shapes,
-                    width=src.width,
-                    height=src.height
-                )
             window = window.round_offsets().round_shape()
             transform = src.window_transform(window)
             vrts = [

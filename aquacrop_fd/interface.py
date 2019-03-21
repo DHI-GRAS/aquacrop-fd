@@ -54,7 +54,7 @@ def interface(
         'start': planting_date,
         'end': planting_date + crop_cycle_length
     }
-    logger.info('Time window is {start} {end}'.format(**selkw))
+    logger.info('Time window is {start:%Y-%m-%d} {end:%Y-%m-%d}'.format(**selkw))
 
     if geometry is not None:
         geom = shapely.geometry.shape(geometry)

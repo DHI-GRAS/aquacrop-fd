@@ -17,7 +17,7 @@ from aquacrop_fd import data_out
 logger = logging.getLogger(__name__)
 
 MAX_WORKERS = 5
-CHUNKSIZES = [5, 20, 35, 50, 65, 75]
+CHUNKSIZES = [170]
 
 
 def run_single(project_name, rundir, datadir, data_by_name, config):
