@@ -56,3 +56,10 @@
 
 *.CRO text eol=crlf
 *.SOL text eol=crlf
+*.CO2 text eol=crlf
+*.ETo text eol=crlf
+*.PLU text eol=crlf
+*.TMP text eol=crlf
+*.IRR text eol=crlf
+*.Irr text eol=crlf
+
