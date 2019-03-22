@@ -125,7 +125,7 @@ def write_net_irrigation_file(datadir, fraction):
     infile = templates.DATA['climate']['Irrigation.IRR']
     outfile = datadir / infile.name
     changes = {
-        'Allowable depletion of RAW (%)': fraction
+        'Allowable depletion of RAW (%)': int(fraction)
     }
     parser.change_file(infile, outfile, changes)
     return outfile
