@@ -164,7 +164,7 @@ def run_cli(log_dir, **kwargs):
     help='Write log files and job files to this directory'
 )
 @click.option(
-    '--delete-no-op-logs', is_flag=True, default=True, show_default=True,
+    '--delete-no-op-logs/--keep-no-op-logs', default=True, show_default=True,
     help='Delete log files when no real work was done'
 )
 def run_queues(log_dir, delete_no_op_logs=False, **kwargs):
