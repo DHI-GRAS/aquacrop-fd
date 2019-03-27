@@ -10,6 +10,11 @@ from aquacrop_fd.scripts import netcdf_output
 logger = logging.getLogger(__name__)
 
 
+class JobFailure(RuntimeError):
+
+    pass
+
+
 def get_job(api_url):
     logger.info('Attempting to get job from queue')
     url = api_url + '/getjob'
@@ -80,6 +85,7 @@ def work_queue(
     # fork between queue and file jobs
     jobs_getter = _get_jobs_getter(job_files)
 
+    work_done = {}
     while True:
         job = jobs_getter(api_url)
         if job is None:
@@ -108,12 +114,15 @@ def work_queue(
             outfile = Path(outdir) / f'{guid}.nc'
             logger.info(f'Writing result to {outfile}')
             netcdf_output.to_netcdf(ds, outfile)
+            work_done[guid] = outfile
         except Exception as error:
             logger.exception(f'Job {guid} failed!')
             error_message = f'Processing failed. ({str(error)})'
             if job_file_dir is not None:
                 write_job_file(job_file_dir, job, failed=True)
-            raise
+            raise JobFailure(str(error)) from error
         finally:
             logger.info('Putting DONE message')
             put_done(api_url, guid=guid, error=error_message)
+
+    return work_done or None

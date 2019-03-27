@@ -45,6 +45,7 @@ def setup_logging(debug=False, log_dir=None):
     ch.setFormatter(ch_fmt)
     logger.addHandler(ch)
 
+    logfile = None
     if log_dir is not None:
         now = datetime.datetime.now()
         logfname = f'{now:%Y%m%d}-{now:%H%M%S}.log'
@@ -54,6 +55,7 @@ def setup_logging(debug=False, log_dir=None):
         fh_fmt = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
         fh.setFormatter(fh_fmt)
         logger.addHandler(fh)
+    return logfile
 
 
 @click.command()
@@ -161,14 +163,26 @@ def run_cli(log_dir, **kwargs):
     '--log-dir', type=OutdirMakedirs(), default=None,
     help='Write log files and job files to this directory'
 )
-def run_queues(log_dir, **kwargs):
-    setup_logging(log_dir=log_dir)
+@click.option(
+    '--delete-no-op-logs/--keep-no-op-logs', default=True, show_default=True,
+    help='Delete log files when no real work was done'
+)
+def run_queues(log_dir, delete_no_op_logs=False, **kwargs):
+    logfile = setup_logging(log_dir=log_dir)
     try:
         from aquacrop_fd import queue_interface
         job_file_dir = Path(log_dir) / 'job-files'
         job_file_dir.mkdir(parents=True, exist_ok=True)
         kwargs['job_file_dir'] = job_file_dir
-        queue_interface.work_queue(**kwargs)
+        work_done = queue_interface.work_queue(**kwargs)
+        if not delete_no_op_logs and work_done and logfile is not None:
+            try:
+                logfile.unlink()
+            except OSError:
+                pass
+    except queue_interface.JobFailure:
+        # all under control
+        pass
     except Exception as error:
         logger.critical(f'Unexpected error: {error}')
         raise error
