@@ -33,6 +33,8 @@ LAND_COVER_CLASS_MAP = {
     'Rice': 660
 }
 
+RICE_CROPS = ['Rice', 'PaddyRice']
+
 
 def _soil_class_values_to_names(ds):
     smr = np.array(list(SOIL_CLASS_MAP_REVERSED.values()))
@@ -57,7 +59,7 @@ def interface(
     }
 
     crop_cycle_length = model_setup.get_crop_cycle_length(crop)
-    land_cover_class_name = 'Rice' if crop == 'Rice' else 'Cropland'
+    land_cover_class_name = 'Rice' if crop in RICE_CROPS else 'Cropland'
     land_cover_class = LAND_COVER_CLASS_MAP[land_cover_class_name]
 
     selkw = {
