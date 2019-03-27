@@ -169,6 +169,9 @@ def run_queues(log_dir, **kwargs):
         job_file_dir.mkdir(parents=True, exist_ok=True)
         kwargs['job_file_dir'] = job_file_dir
         queue_interface.work_queue(**kwargs)
+    except queue_interface.JobFailure:
+        # all under control
+        pass
     except Exception as error:
         logger.critical(f'Unexpected error: {error}')
         raise error
