@@ -181,8 +181,9 @@ def run_queues(log_dir, delete_no_op_logs=False, **kwargs):
         # all under control
         pass
     except Exception as error:
-        logger.critical(f'Unexpected error: {error}')
+        logger.exception(f'Unexpected error: {error}')
         raise error
+	:q
     finally:
         if delete_no_op_logs and not work_done and logfile is not None:
             try:
