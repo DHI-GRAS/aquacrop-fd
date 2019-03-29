@@ -175,6 +175,7 @@ def run_queues(log_dir, delete_no_op_logs=False, **kwargs):
         job_file_dir = Path(log_dir) / 'job-files'
         job_file_dir.mkdir(parents=True, exist_ok=True)
         kwargs['job_file_dir'] = job_file_dir
+        kwargs['log_file_dir'] = job_file_dir
         work_done = queue_interface.work_queue(**kwargs)
     except queue_interface.JobFailure:
         # all under control
@@ -183,7 +184,7 @@ def run_queues(log_dir, delete_no_op_logs=False, **kwargs):
         logger.critical(f'Unexpected error: {error}')
         raise error
     finally:
-        if not delete_no_op_logs and work_done and logfile is not None:
+        if delete_no_op_logs and not work_done and logfile is not None:
             try:
                 logfile.unlink()
             except OSError:
