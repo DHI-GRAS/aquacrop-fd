@@ -1,4 +1,5 @@
 from pathlib import Path
+import contextlib
 import logging
 
 import requests
@@ -20,7 +21,7 @@ def get_job(api_url):
     url = api_url + '/getjob'
     r = requests.post(url, json={'num_messages': 1})
     if not r.ok:
-        if 'No message found' in r.text:
+        if 'No job found' in r.text:
             return None
         else:
             logger.info(f'Getting JOB message failed: {r.text}')
@@ -72,11 +73,27 @@ def _get_jobs_getter(job_files):
         return get_job
 
 
+@contextlib.contextmanager
+def log_to_file(log_file_dir, guid, level='INFO'):
+    fh = None
+    if log_file_dir is not None:
+        logfname = f'{guid}.log'
+        logfile = Path(log_file_dir) / logfname
+        fh = logging.FileHandler(logfile)
+        fh.setLevel(level)
+        fh_fmt = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+        fh.setFormatter(fh_fmt)
+        logger.addHandler(fh)
+    yield
+    if fh is not None:
+        logger.removeHandler(fh)
+
+
 def work_queue(
         api_url,
         plu_path, eto_path, tmp_min_path, tmp_max_path,
         soil_map_path, land_cover_path,
-        outdir, job_file_dir=None,
+        outdir, log_file_dir=None, job_file_dir=None,
         job_files=None
 ):
     if not api_url.endswith('/'):
@@ -98,31 +115,32 @@ def work_queue(
         guid = job['guid']
         logger.info(f'Processing job {guid}')
 
-        kw = {
-            k: job[k] for k in
-            ['planting_date', 'crop', 'irrigated', 'fraction', 'geometry']
-        }
+        with log_to_file(log_file_dir, guid):
+            kw = {
+                k: job[k] for k in
+                ['planting_date', 'crop', 'irrigated', 'fraction', 'geometry']
+            }
 
-        error_message = None
-        try:
-            ds = interface.interface(
-                plu_path=plu_path, eto_path=eto_path,
-                tmp_min_path=tmp_min_path, tmp_max_path=tmp_max_path,
-                soil_map_path=soil_map_path, land_cover_path=land_cover_path,
-                **kw
-            )
-            outfile = Path(outdir) / f'{guid}.nc'
-            logger.info(f'Writing result to {outfile}')
-            netcdf_output.to_netcdf(ds, outfile)
-            work_done[guid] = outfile
-        except Exception as error:
-            logger.exception(f'Job {guid} failed!')
-            error_message = f'Processing failed. ({str(error)})'
-            if job_file_dir is not None:
-                write_job_file(job_file_dir, job, failed=True)
-            raise JobFailure(str(error)) from error
-        finally:
-            logger.info('Putting DONE message')
-            put_done(api_url, guid=guid, error=error_message)
+            error_message = None
+            try:
+                ds = interface.interface(
+                    plu_path=plu_path, eto_path=eto_path,
+                    tmp_min_path=tmp_min_path, tmp_max_path=tmp_max_path,
+                    soil_map_path=soil_map_path, land_cover_path=land_cover_path,
+                    **kw
+                )
+                outfile = Path(outdir) / f'{guid}.nc'
+                logger.info(f'Writing result to {outfile}')
+                netcdf_output.to_netcdf(ds, outfile)
+                work_done[guid] = outfile
+            except Exception as error:
+                logger.exception(f'Job {guid} failed!')
+                error_message = f'Processing failed. ({str(error)})'
+                if job_file_dir is not None:
+                    write_job_file(job_file_dir, job, failed=True)
+                raise JobFailure(str(error)) from error
+            finally:
+                logger.info('Putting DONE message')
+                put_done(api_url, guid=guid, error=error_message)
 
     return work_done or None
