@@ -28,7 +28,10 @@ setup(
     ],
     extras_require={
         'test': [
-            'pytest'
+            'pytest',
+            'pytest-cov',
+            'codecov',
+            'colorlog'
         ]
     },
     packages=find_packages(),

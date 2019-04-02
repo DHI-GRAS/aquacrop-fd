@@ -13,7 +13,10 @@ install:
   - pip install -e .[test]
 
 script:
-  - python -m pytest --color=yes
+  - python -m pytest --color=yes --cov=aquacrop_fd
+
+after_success:
+  - codecov
 
 notifications:
   email: false
