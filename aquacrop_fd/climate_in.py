@@ -89,6 +89,7 @@ def select_align_inputs(
         else:
             # resample to same daily index
             logger.info(f'Time-interpolating {name} to daily values')
+            da = da.sel(time=slice(start, end)).load()
             da = time_resampling.resample_means(da, time_index)
         da.name = name
         darrs_pt_time[name] = da
