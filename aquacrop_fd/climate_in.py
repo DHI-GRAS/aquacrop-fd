@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 import xarray as xr
@@ -10,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 DARR_NAMES = ['PLU', 'ETo', 'TMP_min', 'TMP_max']
 DARR_NAMES_DAILY = ['PLU']
+
+ONEWEEK = datetime.timedelta(days=7)
 
 
 def remove_empty_points(ds):
@@ -89,6 +92,7 @@ def select_align_inputs(
         else:
             # resample to same daily index
             logger.info(f'Time-interpolating {name} to daily values')
+            da = da.load()
             da = time_resampling.resample_means(da, time_index)
         da.name = name
         darrs_pt_time[name] = da
